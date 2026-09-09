@@ -542,7 +542,7 @@ function renderDone(){
 'Elérhető napok: '+b.dates.join(', ');
   const mail='mailto:'+(cfg.settings.notifyEmail||'')+'?subject='+encodeURIComponent('Új foglalás – '+b.customer.name)+'&body='+encodeURIComponent(body);
   viewEl.innerHTML='<div class="ok"><h2 style="margin:0 0 6px">✅ Köszönjük, '+esc(b.customer.name)+'!</h2>'
-    +'Rögzítettük az igényed. Hamarosan felkeresünk a megadott elérhetőségen, hogy egyeztessünk a pontos időpontról.</div>'
+    +'Rögzítettük az igényed. <strong>24 órán belül</strong> jelentkezünk a megadott elérhetőségen, és egyeztetjük a pontos időpontot.</div>'
     +'<p><strong>Becsült végösszeg: </strong><span style="color:var(--brand);font-weight:800;font-size:1.2rem">'+fmt(b.total)+'</span> (előleg: '+fmt(b.deposit)+')</p>'
     +'<pre class="sum">'+body.replace(/</g,'&lt;')+'</pre>'
     +((b.photos&&b.photos.length)?'<div class="photos">'+b.photos.map(s=>'<div class="thumb"><img src="'+s+'"></div>').join('')+'</div>':'')
