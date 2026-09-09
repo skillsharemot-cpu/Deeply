@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Jobbmint – Kalkulátor és árajánlat</title>
+<style>
+  :root{
+    --brand:#0e7c86; --brand-dark:#0a5f67; --cta:#d63f08;
+    --ink:#132227; --muted:#5b6d72; --line:#dbe4e6; --bg:#f4f7f7; --card:#fff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+  header{background:linear-gradient(135deg,var(--brand),var(--brand-dark));color:#fff;
+         padding:34px 21px 29px}
+  .wrap{max-width:860px;margin:0 auto}
+  header h1{margin:0 0 6px;font-size:26px;letter-spacing:.2px}
+  header p{margin:0;opacity:.9;font-size:15px}
+  main{padding:29px 21px 55px}
+  .cards{display:grid;gap:13px;grid-template-columns:1fr 1fr}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;
+        padding:21px;text-decoration:none;color:inherit;display:block;
+        transition:transform .12s ease,box-shadow .12s ease,border-color .12s}
+  .card:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(14,124,134,.13);
+              border-color:var(--brand)}
+  .card .ico{font-size:26px;line-height:1}
+  .card h2{margin:8px 0 5px;font-size:17px}
+  .card p{margin:0;color:var(--muted);font-size:14px}
+  .card.wide{grid-column:1/-1}
+  .tag{display:inline-block;margin-top:8px;font-size:12px;font-weight:600;
+       padding:2px 8px;border-radius:99px;background:#e6f2f3;color:var(--brand-dark)}
+  .tag.belso{background:#fdeae2;color:var(--cta)}
+  .note{margin-top:26px;background:#fff;border:1px solid var(--line);border-left:4px solid var(--cta);
+        border-radius:10px;padding:16px 18px;font-size:14px;color:var(--muted)}
+  .note b{color:var(--ink)}
+  footer{padding:0 21px 34px;color:var(--muted);font-size:13px}
+  @media (max-width:640px){
+    .cards{grid-template-columns:1fr}
+    header h1{font-size:22px}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>Jobbmint – Kárpittisztítás</h1>
+    <p>Árkalkulátor és árajánlat-készítő · belső munkafelület</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="cards">
+    <a class="card" href="arkalkulator_foglalas.html">
+      <div class="ico">🧽</div>
+      <h2>Árkalkulátor + foglalás</h2>
+      <p>A vevői oldal: szolgáltatás összeállítása, ár, időpont és foglalás leadása.</p>
+      <span class="tag">vevőknek küldhető</span>
+    </a>
+
+    <a class="card" href="arkalkulator_admin.html">
+      <div class="ico">⚙️</div>
+      <h2>Admin – árak beállítása</h2>
+      <p>Árlista, felárak, kiegészítők szerkesztése és a beérkezett foglalások listája.</p>
+      <span class="tag belso">csak belső használat</span>
+    </a>
+
+    <a class="card wide" href="arajanlat_keszito.html">
+      <div class="ico">🧾</div>
+      <h2>Árajánlat-készítő</h2>
+      <p>A leadott foglalásból (vagy kézzel) nyomtatható, e-mailben küldhető árajánlat.</p>
+      <span class="tag belso">csak belső használat</span>
+    </a>
+  </div>
+
+  <div class="note">
+    <b>Jó tudni:</b> az árak és a foglalások a <b>böngésző saját tárolójában</b> élnek
+    (localStorage), nem szerveren. Ezért az adminban beállított árakat és a beérkezett
+    foglalásokat abban a böngészőben látod, ahol dolgoztál velük – másik gépen vagy
+    telefonon nem jelennek meg. Átvitelhez az admin <b>⬇ Export JSON</b> /
+    <b>⬆ Import JSON</b> gombjait használd.
+  </div>
+</main>
+
+<footer class="wrap">Jobbmint · ideiglenes munkafelület</footer>
+</body>
+</html>

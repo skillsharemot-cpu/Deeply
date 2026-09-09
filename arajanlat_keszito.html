@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Árajánlat-készítő – Jobbmint</title>
+<style>
+  /* ====== ALKALMAZÁS (szerkesztő) – nyomtatáskor eltűnik ====== */
+  :root{--bg:#eef2f5;--card:#fff;--ink:#1c2b33;--muted:#5b7282;--brand:#0e7c86;--brand2:#3aa6a0;
+    --accent:#e8f5f4;--line:#dde7ec;--danger:#c0392b;--ok:#157347;--warn:#b35900;--warnbg:#fff4e6;}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Segoe UI",system-ui,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:15px}
+  .topbar{position:sticky;top:0;z-index:30;background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;
+    padding:12px 18px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  .topbar h1{margin:0;font-size:1.05rem;white-space:nowrap}
+  .topbar .acts{display:flex;gap:8px;flex-wrap:wrap}
+  .tb{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:8px;
+    padding:7px 12px;cursor:pointer;font-weight:600;font-size:.85rem;white-space:nowrap}
+  .tb:hover{background:rgba(255,255,255,.28)}
+  .tb.solid{background:#fff;color:var(--brand);border-color:#fff}
+  .app{display:grid;grid-template-columns:430px 1fr;gap:18px;padding:18px;align-items:start;max-width:1500px;margin:0 auto}
+  @media(max-width:1050px){.app{grid-template-columns:1fr}.previewWrap{position:static}}
+  @media(max-width:560px){.app{padding:12px}.g3,.g4{grid-template-columns:1fr 1fr}}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:14px;
+    box-shadow:0 2px 8px rgba(0,0,0,.04)}
+  .panel>h2{margin:0 0 4px;font-size:1rem;color:var(--brand)}
+  .panel>p.desc{margin:0 0 12px;color:var(--muted);font-size:.82rem}
+  .fold>h2{cursor:pointer;user-select:none}
+  .fold>h2::before{content:"▾ ";font-size:.8em}
+  .fold.closed>h2::before{content:"▸ "}
+  .fold.closed>*:not(h2){display:none}
+  label.f{display:block;font-weight:600;font-size:.8rem;margin:9px 0 3px;color:#3d5462}
+  input[type=text],input[type=number],input[type=email],input[type=date],textarea,select{
+    width:100%;min-width:0;border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:.9rem;font-family:inherit;background:#fff;color:var(--ink)}
+  /* grid/flex gyerekek alap min-width:auto-ja mobilon kifeszítené az oldalt */
+  .app>*,.g2>*,.g3>*,.g4>*,.disc-row>*,.itm-h>*{min-width:0}
+  textarea{resize:vertical}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--brand2);outline-offset:-1px}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+  .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .btn{border:none;border-radius:8px;padding:8px 13px;cursor:pointer;font-weight:600;font-size:.87rem}
+  .btn-primary{background:var(--brand);color:#fff}
+  .btn-ghost{background:#fff;border:1px solid var(--line);color:var(--ink)}
+  .btn-add{background:var(--accent);color:var(--brand);width:100%;margin-top:10px}
+  .btn-sm{padding:4px 8px;font-size:.8rem;background:#fff;border:1px solid var(--line);border-radius:6px;cursor:pointer;color:var(--muted)}
+  .btn-sm:hover{color:var(--ink);border-color:#b9c8d1}
+  .btn-sm.del:hover{color:var(--danger);border-color:var(--danger)}
+  /* tétel-kártya */
+  .itm{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:10px;background:#fbfdfd}
+  .itm.opt{background:#fffaf2;border-color:#f0dcc0}
+  .itm-h{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+  .itm-h .num{font-weight:800;color:var(--muted);font-size:.8rem;min-width:16px}
+  .itm-h input{flex:1;font-weight:600}
+  .itm-f{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
+  .chk{display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--muted);cursor:pointer}
+  .chk input{width:auto}
+  .net{font-weight:800;color:var(--brand);font-size:.95rem;white-space:nowrap}
+  .net s{color:#a9b7c0;font-weight:500;font-size:.8rem;margin-right:5px}
+  .disc-row{display:grid;grid-template-columns:1fr 60px 90px 30px;gap:6px;align-items:center;margin-bottom:7px}
+  .hint{background:var(--warnbg);border-left:4px solid var(--warn);padding:8px 11px;border-radius:6px;color:#5a3000;font-size:.8rem;margin:8px 0}
+  .info{background:var(--accent);border-left:4px solid var(--brand);padding:8px 11px;border-radius:6px;font-size:.8rem;margin:8px 0;color:#0d4d52}
+  .toast{position:fixed;bottom:20px;right:20px;background:var(--ok);color:#fff;padding:12px 20px;border-radius:8px;
+    opacity:0;transform:translateY(10px);transition:.3s;z-index:90}
+  .toast.show{opacity:1;transform:translateY(0)}
+  /* modal */
+  .modal{position:fixed;inset:0;background:rgba(15,30,38,.55);display:none;align-items:center;justify-content:center;z-index:80;padding:16px}
+  .modal.show{display:flex}
+  .modal-box{background:#fff;border-radius:14px;max-width:640px;width:100%;max-height:85vh;overflow:auto;padding:20px 22px}
+  .modal-box h3{margin:0 0 10px;color:var(--brand)}
+  .pick{border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-bottom:9px;cursor:pointer;background:#fbfdfd}
+  .pick:hover{border-color:var(--brand2);background:var(--accent)}
+  .pick b{display:block}
+  .pick small{color:var(--muted)}
+  .thumbs{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+  .thumb{position:relative;width:64px;height:64px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+  .thumb img{width:100%;height:100%;object-fit:cover}
+  .thumb .rm{position:absolute;top:2px;right:2px;background:rgba(0,0,0,.6);color:#fff;border-radius:50%;
+    width:18px;height:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.72rem}
+  .previewWrap{position:sticky;top:66px}
+  .prev-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px}
+  .prev-head span{font-size:.8rem;color:var(--muted)}
+  .paper{background:#fff;border-radius:12px;box-shadow:0 4px 22px rgba(0,0,0,.10);overflow:hidden}
+  @media print{
+    .topbar,.editor,.prev-head,.toast,.modal{display:none!important}
+    .app{display:block;padding:0;margin:0;max-width:none}
+    .previewWrap{position:static}
+    .paper{box-shadow:none;border-radius:0}
+    body{background:#fff}
+    @page{size:A4;margin:11mm}
+  }
+</style>
+<style id="docStyle"></style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>🧾 Árajánlat-készítő</h1>
+  <div class="acts">
+    <button class="tb" id="btnLoadBooking">📥 Betöltés a kalkulátorból</button>
+    <button class="tb" id="btnArchive">📂 Mentett ajánlatok</button>
+    <button class="tb" id="btnSave">💾 Mentés</button>
+    <button class="tb" id="btnNew">＋ Új</button>
+    <button class="tb" id="btnMail">✉ Kísérőlevél</button>
+    <button class="tb" id="btnHtml">⬇ HTML mentése</button>
+    <button class="tb solid" id="btnPrint">🖨️ Nyomtatás / PDF</button>
+  </div>
+</div>
+
+<div class="app">
+  <!-- ============ SZERKESZTŐ ============ -->
+  <div class="editor" id="editor">
+
+    <div class="panel">
+      <h2>Ajánlat fejadatok</h2>
+      <p class="desc">Sorszám, dátumok, tárgy, ÁFA-mód.</p>
+      <div><label class="f">Dokumentum címe (a lap tetején, nagy betűvel)</label>
+        <input type="text" data-f="docTitle" list="docTitleOpts" placeholder="Árajánlat">
+        <datalist id="docTitleOpts">
+          <option value="Árajánlat"></option>
+          <option value="Tételes elszámolás"></option>
+          <option value="Díjbekérő"></option>
+          <option value="Teljesítésigazolás"></option>
+        </datalist>
+      </div>
+      <div class="g2" style="margin-top:8px">
+        <div><label class="f">Ajánlat sorszáma</label><input type="text" data-f="no"></div>
+        <div><label class="f">Tárgy</label><input type="text" data-f="subject"></div>
+      </div>
+      <div class="g3">
+        <div><label class="f">Keltezés</label><input type="date" data-f="date"></div>
+        <div><label class="f">Érvényesség (0 = nem jelenik meg)</label><input type="number" min="0" data-f="validDays"></div>
+        <div><label class="f">Fizetési mód</label>
+          <select data-f="payment"><option>Készpénz</option><option>Bankkártya</option><option>Átutalás</option><option>Készpénz vagy átutalás</option></select></div>
+      </div>
+      <div class="g3">
+        <div><label class="f">ÁFA-mód</label>
+          <select data-f="vatMode">
+            <option value="aam">Alanyi adómentes (AAM)</option>
+            <option value="vat">ÁFA-s (%)</option>
+          </select></div>
+        <div><label class="f">ÁFA %</label><input type="number" min="0" step="1" data-f="vatPct"></div>
+        <div><label class="f">Kerekítés</label>
+          <select data-f="rounding"><option value="0">nincs</option><option value="5">5 Ft</option><option value="10">10 Ft</option><option value="100">100 Ft</option></select></div>
+      </div>
+      <div class="g2">
+        <div><label class="f">Színséma</label>
+          <select data-f="theme"><option value="teal">Jobbmint (teal)</option><option value="sarga">Sárga (mint a minta)</option><option value="mono">Fekete-fehér (tintakímélő)</option></select></div>
+        <div><label class="f">Foglalási előleg (0 = nem jelenik meg)</label><input type="number" step="any" data-f="deposit"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Ügyfél</h2>
+      <p class="desc">Ez kerül az ajánlat jobb felső kártyájára.</p>
+      <label class="f">Név / cégnév</label><input type="text" data-f="customer.name">
+      <div class="g2">
+        <div><label class="f">Irányítószám + város</label><input type="text" data-f="customer.city" placeholder="1013 Budapest"></div>
+        <div><label class="f">Cím (utca, házszám)</label><input type="text" data-f="customer.address" placeholder="Pauler utca 11."></div>
+      </div>
+      <div class="g3">
+        <div><label class="f">Adószám</label><input type="text" data-f="customer.taxNo" placeholder="10773879-2-41"></div>
+        <div><label class="f">Telefonszám</label><input type="text" data-f="customer.phone"></div>
+        <div><label class="f">E-mail</label><input type="text" data-f="customer.email"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Tételek</h2>
+      <p class="desc">Az „Kedv. %” oszlop tételes kedvezmény: az eredeti egységár áthúzva jelenik meg az ajánlaton.</p>
+
+      <div class="info">
+        <strong>Gyors hozzáadás az árlistából</strong>
+        <div class="g2" style="margin-top:6px">
+          <select id="qaItem"></select>
+          <select id="qaMat"></select>
+        </div>
+        <div class="g2" style="margin-top:6px">
+          <input type="number" id="qaQty" step="any" value="1" title="Mennyiség">
+          <button class="btn btn-primary" id="qaAdd">＋ Hozzáadás</button>
+        </div>
+      </div>
+
+      <div id="items"></div>
+      <div class="g2" style="margin-top:8px">
+        <button class="btn btn-add" id="addItem">＋ Üres tétel</button>
+        <button class="btn btn-ghost" id="addBreak" title="Nyomtatáskor ide tör a dokumentum – nem jelenik meg tételként, nem számít bele az árba">✂️ Oldaltörés</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Végösszeg-kedvezmények</h2>
+      <p class="desc">Egyedi feliratú kedvezmény a részösszegre. Több sor is felvehető, egymás után számolódnak.</p>
+      <div id="discs"></div>
+      <button class="btn btn-add" id="addDisc">＋ Kedvezmény sor</button>
+      <div class="g2" style="margin-top:10px">
+        <button class="btn btn-ghost" data-quick="Első alkalom kedvezmény|10">Első alkalom −10%</button>
+        <button class="btn btn-ghost" data-quick="B2B partner kedvezmény|15">B2B −15%</button>
+      </div>
+    </div>
+
+    <div class="panel fold closed">
+      <h2>Megjegyzés, fotók, gombok</h2>
+      <div class="g2">
+        <button class="btn btn-ghost" data-notepreset="before">📤 Ajánlat szövege</button>
+        <button class="btn btn-ghost" data-notepreset="done">✅ Elvégzett munka szövege</button>
+      </div>
+      <label class="f" style="margin-top:10px">Megjegyzés doboz (sárga keretes szöveg az ajánlat alján)</label>
+      <textarea rows="3" data-f="note"></textarea>
+      <label class="f">Apróbetűs záradék (a lábléc fölött)</label>
+      <textarea rows="2" data-f="terms"></textarea>
+      <label class="chk" style="margin-top:10px"><input type="checkbox" data-f="cta"> „Elfogadom” + telefon gomb az ajánlat alján</label>
+      <label class="chk" style="margin-top:6px"><input type="checkbox" data-f="showBank"> Utalási adatok (bankszámlaszám) a végösszeg alatt</label>
+      <label class="f" style="margin-top:8px">Közlemény (üresen hagyva nem jelenik meg a sor)</label>
+      <input type="text" data-f="bankRef" placeholder="pl. Déryné kárpittisztítás">
+      <label class="f">Fotók az ajánlathoz (a foglalásból jövő képek vagy sajátok)</label>
+      <input type="file" id="photoFile" accept="image/*" multiple>
+      <div class="thumbs" id="photoList"></div>
+    </div>
+
+    <div class="panel fold closed">
+      <h2>Szolgáltató (a te adataid)</h2>
+      <p class="desc">Egyszer kitöltöd, a böngésző megjegyzi minden további ajánlathoz.</p>
+      <div class="g2">
+        <div><label class="f">Cégnév</label><input type="text" data-f="seller.name"></div>
+        <div><label class="f">Adószám</label><input type="text" data-f="seller.taxNo"></div>
+      </div>
+      <div class="g3">
+        <div><label class="f">Telefon</label><input type="text" data-f="seller.phone"></div>
+        <div><label class="f">E-mail</label><input type="text" data-f="seller.email"></div>
+        <div><label class="f">Weboldal</label><input type="text" data-f="seller.web"></div>
+      </div>
+      <div class="g2">
+        <div><label class="f">Bankszámlaszám</label>
+          <input type="text" data-f="seller.account" placeholder="12345678-12345678-12345678"></div>
+        <div><label class="f">Bank neve (opcionális)</label>
+          <input type="text" data-f="seller.bankName" placeholder="OTP Bank"></div>
+      </div>
+      <div class="hint">Az árlista a kalkulátorból jön (<code>tc_pricing_v1</code>). Ha üres a gyors hozzáadás listája,
+        nyisd meg egyszer az admin oldalt és nyomj Mentést – vagy tölts be egy exportált JSON-t:
+        <input type="file" id="cfgFile" accept="application/json" style="margin-top:6px">
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ ELŐNÉZET ============ -->
+  <div class="previewWrap">
+    <div class="prev-head">
+      <span>Élő előnézet – ez kerül a PDF-be / e-mailbe</span>
+      <span id="pageInfo"></span>
+    </div>
+    <div class="paper" id="preview"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal" id="modal"><div class="modal-box" id="modalBox"></div></div>
+
+<script>
+/* =======================================================================
+   ÁRAJÁNLAT-KÉSZÍTŐ
+   - Bemenet: az árkalkulátor localStorage adatai (árlista + foglalások)
+   - Kimenet: nyomtatható / PDF-be menthető, illetve önálló HTML ajánlat
+   ======================================================================= */
+const PKEY='tc_pricing_v1', BKEY='tc_bookings_v1',
+      OKEY='tc_offers_v1', DKEY='tc_offer_draft_v1', SEQKEY='tc_offer_seq_v1';
+
+/* ---- tartalék árlista, ha a kalkulátort még sose mentették el ezen a gépen ---- */
+const FALLBACK={
+  settings:{businessName:'Jobbmint',currency:'Ft',minFee:6000,travelFee:6000,deposit:4000,notifyEmail:''},
+  services:[
+    {id:'kanape',name:'Kanapé / ülőgarnitúra',unit:'ülőhely',price:4000,material:true},
+    {id:'fotel',name:'Fotel',unit:'db',price:4000,material:true},
+    {id:'szonyeg',name:'Szőnyeg',unit:'m²',price:900,material:true},
+    {id:'auto',name:'Autóülés (szövet)',unit:'ülés',price:4500,material:true},
+    {id:'fuggony',name:'Függöny',unit:'db',price:2000,material:false},
+    {id:'matrac',name:'Matrac',unit:'db',price:6000,material:false},
+    {id:'puff',name:'Puff / ülőke',unit:'db',price:2500,material:false},
+    {id:'uvporszivo',name:'UV-s fertőtlenítő porszívózás (száraz, víz nélkül)',unit:'db',price:4500,material:false}
+  ],
+  materials:[
+    {id:'szint',name:'Szintetikus (PP / poliészter)',mult:1.0},
+    {id:'pamut',name:'Pamut / kevert',mult:1.2},
+    {id:'gyapju',name:'Gyapjú',mult:1.8},
+    {id:'barsony',name:'Bársony / viszkóz',mult:2.0}
+  ],
+  stains:[
+    {id:'folt1',name:'Folt 1 – friss, vizes (kávé, tea, üdítő, bor, ételfolt)',price:1500},
+    {id:'folt2',name:'Folt 2 – zsíros vagy régi (olaj, csoki, toll, rágógumi, viasz)',price:3500},
+    {id:'folt3',name:'Folt 3 – szagos vagy biológiai (vizelet, vér, hányás, dohányszag)',price:6500}
+  ],
+  addons:[
+    {id:'porszivo',name:'Porszívózás a tisztítás előtt',type:'fix',value:1500},
+    {id:'impreg',name:'Impregnálás (védőréteg)',type:'pct',value:0.5},
+    {id:'kartamasz',name:'Kartámasz tisztítás',type:'fix',value:1500},
+    {id:'gyorsszar',name:'Gyorsszárítás (ventilátor)',type:'fix',value:2000}
+  ]
+};
+
+const clone=o=>JSON.parse(JSON.stringify(o));
+function loadPricing(){
+  try{const s=localStorage.getItem(PKEY);if(s)return Object.assign(clone(FALLBACK),JSON.parse(s));}catch(e){}
+  return clone(FALLBACK);
+}
+let pricing=loadPricing();
+
+/* ---------------------- segédek ---------------------- */
+const CUR=()=>pricing.settings.currency||'Ft';
+// Minden ezres csoport tagolva – a hu-HU locale a négyjegyűeket nem tagolja ("4800"), számlaképnél
+// viszont egységesebb a "4 800". A szóközök NEM törhetők (U+00A0), így az összeg nem törik ketté cellában.
+function fmt(n){
+  return String(Math.round(+n||0)).replace(/\B(?=(\d{3})+(?!\d))/g,' ')+' '+CUR();
+}
+function fmtNeg(n){return '−'+fmt(Math.abs(n));}
+function esc(s){return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function nl2br(s){return esc(s).replace(/\n/g,'<br>');}
+function qty2s(q){const n=+q||0;return (Math.round(n*100)/100).toString().replace('.',',');}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1900);}
+function iso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function addDays(isoStr,n){const d=new Date(isoStr+'T00:00:00');if(isNaN(d))return '';d.setDate(d.getDate()+(+n||0));return iso(d);}
+function huDate(isoStr){return isoStr?isoStr.replace(/-/g,'. ')+'.':'';}
+
+/* ---------------------- ajánlat modell ---------------------- */
+function nextNo(){
+  const y=new Date().getFullYear();
+  let seq=1;
+  try{const s=JSON.parse(localStorage.getItem(SEQKEY)||'{}');if(s.year===y)seq=(+s.n||0)+1;}catch(e){}
+  return 'JBM-'+y+'-'+String(seq).padStart(3,'0');
+}
+function bumpNo(no){
+  const m=/^JBM-(\d{4})-(\d+)$/.exec(no||'');
+  if(!m)return;
+  try{localStorage.setItem(SEQKEY,JSON.stringify({year:+m[1],n:+m[2]}));}catch(e){}
+}
+function newOffer(){
+  const today=iso(new Date());
+  return {
+    no:nextNo(), date:today, validDays:30,
+    docTitle:'Árajánlat',
+    subject:'Kárpittisztítás', payment:'Készpénz',
+    vatMode:'aam', vatPct:27, rounding:0, theme:'teal', deposit:0,
+    seller:{name:pricing.settings.businessName||'Jobbmint',taxNo:'',phone:'',
+            email:pricing.settings.notifyEmail||'',web:'',account:'',bankName:''},
+    customer:{name:'',city:'',address:'',taxNo:'',phone:'',email:''},
+    items:[],
+    discounts:[],
+    note:'Amennyiben ajánlatunk elnyerte tetszését, kérjük válasz e-mailben vagy telefonon jelezze vissza, és egyeztetünk egy időpontot a kívánt tisztítás(ok)ra.',
+    terms:'Az árak tájékoztató jellegűek; a helyszíni felmérés a végösszeget módosíthatja. Kényes anyagnál (gyapjú, bársony, viszkóz) a tisztítás írásos hozzájárulással történik.',
+    cta:true, showBank:false, bankRef:'', photos:[]
+  };
+}
+let offer=(function(){
+  try{const s=localStorage.getItem(DKEY);if(s)return Object.assign(newOffer(),JSON.parse(s));}catch(e){}
+  return newOffer();
+})();
+
+/* ---- megjegyzés-sablonok: ajánlat (munka előtt) / elvégzett munka (utólagos díjbekérő) ---- */
+const NOTE_PRESETS={
+  before:{
+    docTitle:'Árajánlat', validDays:30, showBank:false,
+    note:'Amennyiben ajánlatunk elnyerte tetszését, kérjük válasz e-mailben vagy telefonon jelezze vissza, és egyeztetünk egy időpontot a kívánt tisztítás(ok)ra.',
+    terms:'Az árak tájékoztató jellegűek; a helyszíni felmérés a végösszeget módosíthatja. Kényes anyagnál (gyapjú, bársony, viszkóz) a tisztítás írásos hozzájárulással történik.',
+    cta:true
+  },
+  done:{
+    docTitle:'Tételes elszámolás', validDays:0, showBank:true,
+    note:'A tisztítást elvégeztük, köszönjük a bizalmat! Kérjük, a végösszeget a jelzett fizetési móddal szíveskedjenek rendezni. Kérdés esetén keressenek bizalommal e-mailben vagy telefonon.',
+    terms:'A tisztítást a megbeszélt feltételek szerint elvégeztük. Kényes anyagoknál (gyapjú, bársony, viszkóz) a tisztítás a jelzett kockázatok írásos elfogadásával történt.',
+    cta:false
+  }
+};
+
+/* ---------------------- SZÁMOLÁS ---------------------- */
+function itemCalc(it){
+  const up=+it.unitPrice||0, q=+it.qty||0, d=Math.min(Math.max(+it.discPct||0,0),100);
+  const eff=Math.round(up*(1-d/100));
+  return {list:Math.round(up*q), eff, net:Math.round(eff*q), disc:d};
+}
+function calc(){
+  const paid=offer.items.filter(i=>!i.optional&&i.type!=='pagebreak');
+  let listNet=0, itemsNet=0;
+  paid.forEach(it=>{const c=itemCalc(it);listNet+=c.list;itemsNet+=c.net;});
+  // végösszeg-kedvezmények egymás után, a futó részösszegre
+  let run=itemsNet; const dlines=[];
+  (offer.discounts||[]).forEach(d=>{
+    const v=+d.value||0; if(!v)return;
+    const amt=d.type==='fix'?Math.min(v,run):Math.round(run*v/100);
+    if(amt<=0)return;
+    run-=amt;
+    dlines.push({label:d.label||'Kedvezmény',sub:d.type==='fix'?'':('−'+v+'%'),amt});
+  });
+  const netTotal=Math.max(run,0);
+  const rate=offer.vatMode==='vat'?(+offer.vatPct||0)/100:0;
+  const vat=Math.round(netTotal*rate);
+  let gross=netTotal+vat;
+  const r=+offer.rounding||0;
+  if(r>1)gross=Math.round(gross/r)*r;
+  const listGross=Math.round(listNet*(1+rate));
+  return {listNet,itemsNet,dlines,netTotal,vat,gross,listGross,saving:Math.max(listGross-gross,0),rate};
+}
+
+/* ---------------------- AZ AJÁNLAT (dokumentum) CSS ---------------------- */
+const DOC_CSS=`
+.d-page{--acc:#0e7c86;--acc-ink:#fff;--dink:#14202a;--dmut:#6b7d8a;--dline:#e4eaee;--dsoft:#f2f5f7;--dbad:#d63f08;
+  background:#fff;color:var(--dink);font:15px/1.5 "Segoe UI",system-ui,-apple-system,Arial,sans-serif;
+  max-width:840px;margin:0 auto;padding:34px 40px 26px;position:relative;overflow:hidden}
+.d-page[data-theme="sarga"]{--acc:#ffe100;--acc-ink:#141414}
+.d-page[data-theme="mono"]{--acc:#16232c;--acc-ink:#fff;--dbad:#16232c}
+.d-corner{position:absolute;top:0;right:0;width:128px;height:26px;background:var(--acc)}
+.d-taxno{font-size:12px;color:var(--dmut);margin-bottom:30px}
+.d-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:26px}
+.d-tw{display:flex;align-items:center;gap:13px;flex-wrap:wrap}
+.d-title{font-size:37px;line-height:1;margin:0;letter-spacing:-.6px;font-weight:800}
+.d-no{background:#141414;color:#fff;border-radius:999px;padding:8px 15px;font-weight:800;font-size:12.5px;letter-spacing:.4px}
+.d-dates{display:flex;gap:9px;flex-wrap:wrap;padding-top:6px}
+.d-pill{background:var(--dsoft);border-radius:999px;padding:8px 15px;font-size:12px;color:#3d4d59;white-space:nowrap}
+.d-cards{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:30px}
+.d-card{background:var(--dsoft);border-radius:14px;padding:16px 19px}
+.d-lbl{font-size:10px;letter-spacing:1.5px;color:var(--dmut);font-weight:700;margin-bottom:1px}
+.d-lbl+.d-val{margin-bottom:11px}
+.d-card>.d-val:last-child{margin-bottom:0}
+.d-val{font-size:14px}
+.d-cust{font-size:18px;font-weight:800;margin:3px 0 7px;text-transform:uppercase;letter-spacing:.2px}
+.d-sec{font-size:10.5px;letter-spacing:2.2px;color:var(--dmut);font-weight:700;margin:0 0 9px 3px}
+.d-tw2{overflow-x:auto}
+.d-tbl{width:100%;border-collapse:collapse}
+.d-tbl thead th{background:var(--acc);color:var(--acc-ink);font-size:10.5px;letter-spacing:1.1px;padding:13px 11px;text-align:left;font-weight:800;white-space:nowrap}
+.d-tbl tbody td{padding:15px 11px;border-bottom:1px solid var(--dline);vertical-align:top;font-size:13.5px}
+.d-tbl tbody tr:last-child td{border-bottom:none}
+.d-c{text-align:center}.d-r{text-align:right}
+.d-iname{font-weight:800;font-size:14.5px}
+.d-idesc{color:var(--dmut);font-size:12.5px;margin-top:3px;max-width:330px}
+.d-badge{display:inline-block;background:var(--dbad);color:#fff;border-radius:999px;padding:2px 9px;font-size:11px;font-weight:800;margin-left:7px;vertical-align:middle}
+.d-strike{color:#a7b4bc;text-decoration:line-through;font-size:12.5px}
+.d-vat{display:inline-block;background:var(--dsoft);border-radius:6px;padding:3px 8px;font-size:11px;color:#4b5c68;white-space:nowrap}
+.d-opt{margin-top:26px}
+.d-opt .d-tbl thead th{background:var(--dsoft);color:#4b5c68}
+.d-optnote{font-size:11.5px;color:var(--dmut);margin:6px 0 0 3px}
+.d-sumwrap{margin-top:30px;margin-left:auto;width:min(100%,470px)}
+.d-sum{background:var(--dsoft);border-radius:14px;padding:16px 19px}
+.d-srow{display:flex;justify-content:space-between;gap:14px;padding:5px 0;font-size:13.5px}
+.d-srow b{white-space:nowrap}
+.d-srow.d-dc{color:var(--dbad)}
+.d-grand{background:var(--acc);color:var(--acc-ink);border-radius:14px;padding:17px 19px;margin-top:13px;
+  display:flex;justify-content:space-between;align-items:baseline;gap:14px;font-weight:800;font-size:19px}
+.d-grand .d-gl{font-size:17px}
+.d-grand s{opacity:.5;font-weight:600;font-size:14px;margin-right:8px}
+.d-save{color:var(--dbad);font-weight:800;font-size:13px;text-align:right;margin-top:9px}
+.d-note-s{font-size:11.5px;color:var(--dmut);text-align:right;margin-top:6px}
+.d-pay{display:flex;justify-content:space-between;gap:14px;font-size:13px;padding:5px 3px;color:#3d4d59}
+.d-bank{border:2px solid var(--acc);border-radius:14px;padding:13px 18px 14px;margin-top:13px}
+.d-bank .d-lbl{margin-bottom:5px}
+.d-bankwho{font-size:12.5px;color:var(--dmut);margin-bottom:3px}
+.d-acc{font-size:19px;font-weight:800;letter-spacing:.4px;font-variant-numeric:tabular-nums;
+  word-break:break-all;line-height:1.25}
+.d-bankref{font-size:11.5px;color:var(--dmut);margin-top:6px}
+.d-bankref b{color:var(--dink)}
+.d-callout{border:2px solid var(--acc);background:#fffef4;border-radius:14px;padding:15px 19px;margin-top:28px;font-size:13.5px}
+.d-page[data-theme="teal"] .d-callout{background:#f2fbfb}
+.d-page[data-theme="mono"] .d-callout{background:#f7f9fa}
+.d-cta{display:flex;gap:11px;flex-wrap:wrap;margin-top:20px}
+.d-cta a{text-decoration:none;border-radius:10px;padding:12px 20px;font-weight:800;font-size:13.5px;display:inline-block}
+.d-cta .d-yes{background:var(--acc);color:var(--acc-ink)}
+.d-cta .d-call{background:#fff;border:2px solid var(--dline);color:var(--dink)}
+.d-photos{display:flex;gap:9px;flex-wrap:wrap;margin-top:24px}
+.d-photos img{width:118px;height:88px;object-fit:cover;border-radius:9px;border:1px solid var(--dline)}
+.d-terms{font-size:11px;color:var(--dmut);margin-top:26px;line-height:1.5}
+.d-foot{text-align:center;color:#9aa9b3;font-size:11.5px;margin-top:16px;padding-top:14px;border-top:1px solid var(--dline)}
+@media(max-width:700px){
+  .d-page{padding:24px 18px}
+  .d-cards{grid-template-columns:1fr}
+  .d-title{font-size:29px}
+  .d-sumwrap{width:100%}
+  .d-grand{font-size:17px}
+}
+.d-brk td{padding:10px 0;border:0}
+.d-brk-line{border-top:1px dashed var(--dmut);position:relative}
+.d-brk-line::after{content:'OLDALTÖRÉS – NYOMTATVA NEM LÁTSZIK';position:absolute;top:-8px;left:50%;
+  transform:translateX(-50%);background:#fff;padding:0 10px;font-size:9px;letter-spacing:.08em;
+  color:var(--dmut);white-space:nowrap}
+@media print{
+  .d-page{max-width:none;padding:0;font-size:12.5px}
+  .d-tbl tbody tr{break-inside:avoid}
+  .d-sumwrap,.d-callout,.d-cta,.d-bank{break-inside:avoid}
+  .d-corner{width:100px}
+  .d-brk{break-after:page;page-break-after:always}
+  .d-brk td{padding:0;height:0;line-height:0}
+  .d-brk-line{display:none}
+}`;
+document.getElementById('docStyle').textContent=DOC_CSS;
+
+/* ---------------------- AZ AJÁNLAT MARKUPJA ---------------------- */
+function vatLabel(){return offer.vatMode==='vat'?((+offer.vatPct||0)+'%'):'AAM';}
+function rowHtml(it){
+  if(it.type==='pagebreak')return '<tr class="d-brk"><td colspan="5"><div class="d-brk-line"></div></td></tr>';
+  const c=itemCalc(it);
+  const badge=c.disc>0?'<span class="d-badge">−'+qty2s(c.disc)+'%</span>':'';
+  const price=c.disc>0
+    ? '<span class="d-strike">'+fmt(+it.unitPrice||0)+'</span><br><strong>'+fmt(c.eff)+'</strong>'
+    : fmt(c.eff);
+  return '<tr>'
+    +'<td><div class="d-iname">'+esc(it.name||'Tétel')+badge+'</div>'
+      +(it.desc?'<div class="d-idesc">'+nl2br(it.desc)+'</div>':'')+'</td>'
+    +'<td class="d-c">'+qty2s(it.qty)+' '+esc(it.unit||'')+'</td>'
+    +'<td class="d-r">'+price+'</td>'
+    +'<td class="d-c"><span class="d-vat">'+vatLabel()+'</span></td>'
+    +'<td class="d-r"><strong>'+fmt(c.net)+'</strong></td>'
+    +'</tr>';
+}
+function docHtml(){
+  const t=calc();
+  const paid=offer.items.filter(i=>!i.optional);
+  const opts=offer.items.filter(i=>i.optional);
+  const s=offer.seller||{}, c=offer.customer||{};
+  const validTo=addDays(offer.date,offer.validDays);
+
+  let h='<div class="d-page" data-theme="'+esc(offer.theme||'teal')+'">';
+  h+='<div class="d-corner"></div>';
+  h+='<div class="d-taxno">'+(s.taxNo?'Adószám: '+esc(s.taxNo):esc(s.name||''))+'</div>';
+
+  h+='<div class="d-head"><div class="d-tw"><h1 class="d-title">'+esc(offer.docTitle||'Árajánlat')+'</h1>'
+    +(offer.no?'<span class="d-no">'+esc(offer.no)+'</span>':'')+'</div>'
+    +'<div class="d-dates">'
+    +'<span class="d-pill">Keltezés: '+esc(offer.date||'')+'</span>'
+    +((validTo&&+offer.validDays>0)?'<span class="d-pill">Érvényes: '+esc(validTo)+'</span>':'')
+    +'</div></div>';
+
+  h+='<div class="d-cards"><div class="d-card">'
+    +'<div class="d-lbl">TÁRGY</div><div class="d-val">'+esc(offer.subject||'—')+'</div>'
+    +'<div class="d-lbl">FIZETÉSI MÓD</div><div class="d-val">'+esc(offer.payment||'—')+'</div>'
+    +'</div><div class="d-card">'
+    +'<div class="d-lbl">ÜGYFÉL</div>'
+    +'<div class="d-cust">'+esc(c.name||'—')+'</div>'
+    +(c.city?'<div class="d-val">'+esc(c.city)+'</div>':'')
+    +(c.address?'<div class="d-val">'+esc(c.address)+'</div>':'')
+    +(c.taxNo?'<div class="d-val">Adószám: '+esc(c.taxNo)+'</div>':'')
+    +(c.phone?'<div class="d-val">'+esc(c.phone)+'</div>':'')
+    +(c.email?'<div class="d-val">'+esc(c.email)+'</div>':'')
+    +'</div></div>';
+
+  h+='<div class="d-sec">TÉTELEK</div><div class="d-tw2"><table class="d-tbl">'
+    +'<thead><tr><th>MEGNEVEZÉS</th><th class="d-c">MENNYISÉG</th><th class="d-r">EGYSÉGÁR</th>'
+    +'<th class="d-c">ÁFA</th><th class="d-r">NETTÓ ÖSSZ.</th></tr></thead><tbody>'
+    +(paid.length?paid.map(rowHtml).join(''):'<tr><td colspan="5" style="color:#9aa9b3">Még nincs tétel.</td></tr>')
+    +'</tbody></table></div>';
+
+  if(opts.length){
+    h+='<div class="d-opt"><div class="d-sec">VÁLASZTHATÓ KIEGÉSZÍTŐK</div><div class="d-tw2"><table class="d-tbl">'
+      +'<thead><tr><th>MEGNEVEZÉS</th><th class="d-c">MENNYISÉG</th><th class="d-r">EGYSÉGÁR</th>'
+      +'<th class="d-c">ÁFA</th><th class="d-r">NETTÓ ÖSSZ.</th></tr></thead><tbody>'
+      +opts.map(rowHtml).join('')+'</tbody></table></div>'
+      +'<p class="d-optnote">Ezek a tételek <strong>nem</strong> részei a lenti végösszegnek – kérésre bármikor hozzáadhatók.</p></div>';
+  }
+
+  h+='<div class="d-sumwrap"><div class="d-sum">';
+  h+='<div class="d-srow"><span>Tételek nettó</span><b>'+fmt(t.itemsNet)+'</b></div>';
+  t.dlines.forEach(d=>{
+    h+='<div class="d-srow d-dc"><span>'+esc(d.label)+(d.sub?' ('+d.sub+')':'')+'</span><b>'+fmtNeg(d.amt)+'</b></div>';
+  });
+  h+='<div class="d-srow"><span>Nettó összesen</span><b>'+fmt(t.netTotal)+'</b></div>';
+  h+='<div class="d-srow"><span>ÁFA'+(offer.vatMode==='vat'?' ('+(+offer.vatPct||0)+'%)':' (alanyi adómentes)')+'</span><b>'+fmt(t.vat)+'</b></div>';
+  h+='</div>';
+
+  h+='<div class="d-grand"><span class="d-gl">Bruttó összesen</span><span>'
+    +(t.saving>0?'<s>'+fmt(t.listGross)+'</s>':'')+'<b>'+fmt(t.gross)+'</b></span></div>';
+  if(t.saving>0)h+='<div class="d-save">Ön '+fmt(t.saving)+' kedvezményt kap!</div>';
+  if(offer.vatMode!=='vat')h+='<div class="d-note-s">Alanyi adómentes (AAM) — a nettó és a bruttó megegyezik.</div>';
+  if(+offer.deposit>0){
+    h+='<div style="margin-top:10px">'
+      +'<div class="d-pay"><span>Foglalási előleg</span><b>'+fmt(offer.deposit)+'</b></div>'
+      +'<div class="d-pay"><span>Helyszínen fizetendő</span><b>'+fmt(Math.max(t.gross-(+offer.deposit||0),0))+'</b></div>'
+      +'</div>';
+  }
+  if(offer.showBank&&s.account){
+    h+='<div class="d-bank">'
+      +'<div class="d-lbl">UTALÁSI ADATOK</div>'
+      +'<div class="d-bankwho">'+esc(s.name||'')+(s.bankName?' · '+esc(s.bankName):'')+'</div>'
+      +'<div class="d-acc">'+esc(s.account)+'</div>'
+      +(offer.bankRef?'<div class="d-bankref">Közleményben kérjük feltüntetni: <b>'+esc(offer.bankRef)+'</b></div>':'')
+      +'</div>';
+  }
+  h+='</div>';
+
+  if(offer.photos&&offer.photos.length){
+    h+='<div class="d-photos">'+offer.photos.map(p=>'<img src="'+p+'" alt="">').join('')+'</div>';
+  }
+  if(offer.note)h+='<div class="d-callout">'+nl2br(offer.note)+'</div>';
+
+  if(offer.cta&&(s.email||s.phone)){
+    const subj=encodeURIComponent('Elfogadom az árajánlatot – '+(offer.no||''));
+    const body=encodeURIComponent('Kedves '+(s.name||'')+'!\n\nAz árajánlatot ('+(offer.no||'')+') elfogadom, kérem keressenek időpont-egyeztetés céljából.\n\nÜdvözlettel:\n'+(c.name||''));
+    h+='<div class="d-cta">'
+      +(s.email?'<a class="d-yes" href="mailto:'+esc(s.email)+'?subject='+subj+'&body='+body+'">✓ Elfogadom az ajánlatot</a>':'')
+      +(s.phone?'<a class="d-call" href="tel:'+esc(String(s.phone).replace(/\s/g,''))+'">📞 '+esc(s.phone)+'</a>':'')
+      +'</div>';
+  }
+  if(offer.terms)h+='<div class="d-terms">'+nl2br(offer.terms)+'</div>';
+
+  const foot=[s.web,s.phone,s.name].filter(Boolean).map(esc).join(' &nbsp;·&nbsp; ');
+  h+='<div class="d-foot">'+foot+'</div>';
+  h+='</div>';
+  return h;
+}
+
+/* ---------------------- RENDER ---------------------- */
+const previewEl=document.getElementById('preview');
+let saveTimer=null;
+function renderDoc(){
+  previewEl.innerHTML=docHtml();
+  const t=calc();
+  document.getElementById('pageInfo').textContent=offer.items.filter(i=>!i.optional&&i.type!=='pagebreak').length+' tétel · '+fmt(t.gross);
+  document.querySelectorAll('.net[data-net]').forEach(el=>{
+    const it=offer.items[+el.dataset.net];if(!it)return;
+    const c=itemCalc(it);
+    el.innerHTML=(c.disc>0?'<s>'+fmt(c.list)+'</s>':'')+fmt(c.net);
+  });
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(autosave,400);
+}
+function autosave(){
+  try{localStorage.setItem(DKEY,JSON.stringify(offer));}
+  catch(e){try{localStorage.setItem(DKEY,JSON.stringify(Object.assign({},offer,{photos:[]})));}catch(e2){}}
+}
+
+function itemsHtml(){
+  if(!offer.items.length)return '<p style="color:#8fa3ae;font-size:.85rem;text-align:center;padding:8px 0">Még nincs tétel – adj hozzá az árlistából vagy üresen.</p>';
+  return offer.items.map((it,i)=>{
+    if(it.type==='pagebreak'){
+      return '<div class="itm" style="background:#fbf9f2">'
+        +'<div class="itm-h"><span class="num">'+(i+1)+'.</span>'
+        +'<span style="flex:1;color:#8fa3ae;font-size:.82rem;font-style:italic">✂️ Oldaltörés – nyomtatáskor ide tör a dokumentum, tételként nem jelenik meg</span>'
+        +'<button class="btn-sm" data-mv="up" data-i="'+i+'" title="Fel">↑</button>'
+        +'<button class="btn-sm" data-mv="down" data-i="'+i+'" title="Le">↓</button>'
+        +'<button class="btn-sm del" data-del="'+i+'" title="Törlés">✕</button></div>'
+        +'<label class="chk" style="margin-top:2px"><input type="checkbox" data-i="'+i+'" data-k="optional" '+(it.optional?'checked':'')+'> '
+        +'A „Választható kiegészítők” táblázatban törjön (alapból a fő tételek táblázatában tör)</label>'
+        +'</div>';
+    }
+    const c=itemCalc(it);
+    return '<div class="itm'+(it.optional?' opt':'')+'">'
+      +'<div class="itm-h"><span class="num">'+(i+1)+'.</span>'
+        +'<input type="text" data-i="'+i+'" data-k="name" value="'+esc(it.name)+'" placeholder="Megnevezés">'
+        +'<button class="btn-sm" data-mv="up" data-i="'+i+'" title="Fel">↑</button>'
+        +'<button class="btn-sm" data-mv="down" data-i="'+i+'" title="Le">↓</button>'
+        +'<button class="btn-sm del" data-del="'+i+'" title="Törlés">✕</button></div>'
+      +'<input type="text" data-i="'+i+'" data-k="desc" value="'+esc(it.desc||'')+'" placeholder="Rövid leírás (opcionális)">'
+      +'<div class="g4" style="margin-top:7px">'
+        +'<div><label class="f" style="margin:0 0 2px">Menny.</label><input type="number" step="any" data-i="'+i+'" data-k="qty" value="'+(+it.qty||0)+'"></div>'
+        +'<div><label class="f" style="margin:0 0 2px">Egység</label><input type="text" data-i="'+i+'" data-k="unit" value="'+esc(it.unit||'')+'"></div>'
+        +'<div><label class="f" style="margin:0 0 2px">Egységár</label><input type="number" step="any" data-i="'+i+'" data-k="unitPrice" value="'+(+it.unitPrice||0)+'"></div>'
+        +'<div><label class="f" style="margin:0 0 2px">Kedv. %</label><input type="number" step="any" min="0" max="100" data-i="'+i+'" data-k="discPct" value="'+(+it.discPct||0)+'"></div>'
+      +'</div>'
+      +'<div class="itm-f">'
+        +'<label class="chk"><input type="checkbox" data-i="'+i+'" data-k="optional" '+(it.optional?'checked':'')+'> Választható extra (nem számít bele)</label>'
+        +'<span class="net" data-net="'+i+'">'+(c.disc>0?'<s>'+fmt(c.list)+'</s>':'')+fmt(c.net)+'</span>'
+      +'</div></div>';
+  }).join('');
+}
+function discsHtml(){
+  if(!offer.discounts.length)return '<p style="color:#8fa3ae;font-size:.85rem;text-align:center;padding:4px 0">Nincs végösszeg-kedvezmény.</p>';
+  return offer.discounts.map((d,i)=>
+    '<div class="disc-row">'
+    +'<input type="text" data-d="'+i+'" data-k="label" value="'+esc(d.label||'')+'" placeholder="pl. Első alkalom kedvezmény">'
+    +'<select data-d="'+i+'" data-k="type"><option value="pct"'+(d.type!=='fix'?' selected':'')+'>%</option>'
+      +'<option value="fix"'+(d.type==='fix'?' selected':'')+'>Ft</option></select>'
+    +'<input type="number" step="any" data-d="'+i+'" data-k="value" value="'+(+d.value||0)+'">'
+    +'<button class="btn-sm del" data-ddel="'+i+'">✕</button></div>').join('');
+}
+function renderItems(){document.getElementById('items').innerHTML=itemsHtml();renderDoc();}
+function renderDiscs(){document.getElementById('discs').innerHTML=discsHtml();renderDoc();}
+function renderPhotos(){
+  document.getElementById('photoList').innerHTML=(offer.photos||[]).map((p,i)=>
+    '<div class="thumb"><img src="'+p+'"><span class="rm" data-ph="'+i+'">✕</span></div>').join('');
+  renderDoc();
+}
+function renderFields(){
+  document.querySelectorAll('[data-f]').forEach(el=>{
+    const v=getPath(offer,el.dataset.f);
+    if(el.type==='checkbox')el.checked=!!v; else el.value=(v??'');
+  });
+}
+function getPath(o,p){return p.split('.').reduce((a,k)=>(a==null?a:a[k]),o);}
+function setPath(o,p,v){const ks=p.split('.');const last=ks.pop();let t=o;ks.forEach(k=>{t[k]=t[k]||{};t=t[k];});t[last]=v;}
+
+/* ---------------------- ESEMÉNYEK ---------------------- */
+document.getElementById('editor').addEventListener('input',e=>{
+  const t=e.target;
+  if(t.dataset.f){
+    let v=t.type==='checkbox'?t.checked:(t.type==='number'?(parseFloat(t.value)||0):t.value);
+    setPath(offer,t.dataset.f,v);
+    return renderDoc();
+  }
+  if(t.dataset.i!==undefined&&t.dataset.k){
+    const it=offer.items[+t.dataset.i];if(!it)return;
+    it[t.dataset.k]=t.type==='checkbox'?t.checked:(t.type==='number'?(parseFloat(t.value)||0):t.value);
+    return renderDoc();
+  }
+  if(t.dataset.d!==undefined&&t.dataset.k){
+    const d=offer.discounts[+t.dataset.d];if(!d)return;
+    d[t.dataset.k]=t.type==='number'?(parseFloat(t.value)||0):t.value;
+    return renderDoc();
+  }
+});
+document.getElementById('editor').addEventListener('change',e=>{
+  const t=e.target;
+  if(t.type!=='checkbox'&&t.tagName!=='SELECT')return;
+  if(t.dataset.i!==undefined&&t.dataset.k==='optional'){
+    offer.items[+t.dataset.i].optional=t.checked;return renderItems();
+  }
+  if(t.dataset.f){
+    setPath(offer,t.dataset.f,t.type==='checkbox'?t.checked:t.value);return renderDoc();
+  }
+  if(t.dataset.d!==undefined){renderDoc();}
+});
+document.getElementById('editor').addEventListener('click',e=>{
+  const t=e.target;
+  if(t.dataset.del!==undefined){offer.items.splice(+t.dataset.del,1);return renderItems();}
+  if(t.dataset.mv){
+    const i=+t.dataset.i, j=t.dataset.mv==='up'?i-1:i+1;
+    if(j<0||j>=offer.items.length)return;
+    const a=offer.items;[a[i],a[j]]=[a[j],a[i]];return renderItems();
+  }
+  if(t.dataset.ddel!==undefined){offer.discounts.splice(+t.dataset.ddel,1);return renderDiscs();}
+  if(t.dataset.quick){
+    const [label,pct]=t.dataset.quick.split('|');
+    offer.discounts.push({label,type:'pct',value:+pct});return renderDiscs();
+  }
+  if(t.dataset.ph!==undefined){offer.photos.splice(+t.dataset.ph,1);return renderPhotos();}
+  if(t.dataset.notepreset){
+    const p=NOTE_PRESETS[t.dataset.notepreset];
+    if(p){offer.docTitle=p.docTitle;offer.validDays=p.validDays;offer.showBank=p.showBank;
+      offer.note=p.note;offer.terms=p.terms;offer.cta=p.cta;
+      renderFields();renderDoc();toast('✓ Szöveg és cím beillesztve');}
+    return;
+  }
+  if(t.tagName==='H2'&&t.parentElement.classList.contains('fold'))t.parentElement.classList.toggle('closed');
+});
+document.getElementById('addItem').onclick=()=>{
+  offer.items.push({name:'',desc:'',qty:1,unit:'db',unitPrice:0,discPct:0,optional:false});renderItems();
+};
+document.getElementById('addBreak').onclick=()=>{
+  offer.items.push({type:'pagebreak',optional:false});renderItems();
+};
+document.getElementById('addDisc').onclick=()=>{
+  offer.discounts.push({label:'',type:'pct',value:10});renderDiscs();
+};
+
+/* ---- gyors hozzáadás az árlistából ---- */
+function fillQuickAdd(){
+  const sel=document.getElementById('qaItem');
+  let h='<optgroup label="Szolgáltatások">';
+  pricing.services.forEach(s=>h+='<option value="svc:'+s.id+'">'+esc(s.name)+' – '+fmt(s.price)+'/'+esc(s.unit)+'</option>');
+  h+='</optgroup><optgroup label="Folt / szag felár">';
+  (pricing.stains||[]).forEach(s=>h+='<option value="stain:'+s.id+'">'+esc(s.name)+' – '+fmt(s.price)+'</option>');
+  h+='</optgroup><optgroup label="Kiegészítők">';
+  (pricing.addons||[]).filter(a=>a.type!=='pct').forEach(a=>h+='<option value="addon:'+a.id+'">'+esc(a.name)+' – '+fmt(a.value)+'</option>');
+  h+='</optgroup><optgroup label="Egyéb">'
+    +'<option value="misc:kiszallas">Kiszállási díj – '+fmt(pricing.settings.travelFee||0)+'</option>'
+    +'<option value="misc:custom">Egyedi tétel (üres)</option></optgroup>';
+  sel.innerHTML=h;
+  const ms=document.getElementById('qaMat');
+  ms.innerHTML='<option value="">— anyag: nincs / alap —</option>'
+    +(pricing.materials||[]).map(m=>'<option value="'+m.id+'">'+esc(m.name)+' × '+m.mult+'</option>').join('');
+}
+document.getElementById('qaAdd').onclick=()=>{
+  const v=document.getElementById('qaItem').value;
+  const matId=document.getElementById('qaMat').value;
+  const q=parseFloat(document.getElementById('qaQty').value)||1;
+  const m=matId?(pricing.materials||[]).find(x=>x.id===matId):null;
+  const mult=m?(+m.mult||1):1;
+  let it={name:'',desc:m?m.name:'',qty:q,unit:'db',unitPrice:0,discPct:0,optional:false};
+  const [kind,id]=v.split(':');
+  if(kind==='svc'){
+    const s=pricing.services.find(x=>x.id===id);
+    if(s)it=Object.assign(it,{name:s.name+' tisztítás',unit:s.unit,unitPrice:Math.round(s.price*(s.material?mult:1)),
+      desc:(s.material&&m)?m.name:''});
+  }else if(kind==='stain'){
+    const s=pricing.stains.find(x=>x.id===id);
+    if(s)it=Object.assign(it,{name:'Folteltávolítás – '+s.name,unit:'alkalom',unitPrice:+s.price,desc:''});
+  }else if(kind==='addon'){
+    const a=pricing.addons.find(x=>x.id===id);
+    if(a)it=Object.assign(it,{name:a.name,unit:'alkalom',unitPrice:+a.value,desc:''});
+  }else if(id==='kiszallas'){
+    it=Object.assign(it,{name:'Kiszállási díj',unit:'alkalom',qty:1,unitPrice:+pricing.settings.travelFee||0,
+      desc:'Budapest és Pest vármegye. A díj tartalmazza a parkolást és a felhasznált vegyszereket.'});
+  }else{
+    it.name='Egyedi tétel';
+  }
+  offer.items.push(it);renderItems();
+};
+
+/* ---- fotók ---- */
+document.getElementById('photoFile').onchange=e=>{
+  [...e.target.files].forEach(f=>{
+    if(!f.type.startsWith('image/'))return;
+    const r=new FileReader();
+    r.onload=ev=>{
+      const img=new Image();
+      img.onload=()=>{
+        const max=900;let w=img.width,h=img.height;
+        if(w>max||h>max){if(w>h){h=Math.round(h*max/w);w=max;}else{w=Math.round(w*max/h);h=max;}}
+        const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+        cv.getContext('2d').drawImage(img,0,0,w,h);
+        offer.photos.push(cv.toDataURL('image/jpeg',0.62));renderPhotos();
+      };
+      img.src=ev.target.result;
+    };
+    r.readAsDataURL(f);
+  });
+  e.target.value='';
+};
+
+/* ---- árlista import (admin JSON export) ---- */
+document.getElementById('cfgFile').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const j=JSON.parse(r.result);
+      if(j.services){pricing=Object.assign(clone(FALLBACK),j);fillQuickAdd();toast('✓ Árlista betöltve');renderDoc();}
+      else alert('Ez nem árlista-JSON (nincs benne "services").');
+    }catch(err){alert('Hibás JSON fájl.');}
+  };
+  r.readAsText(f);
+  e.target.value='';
+};
+
+/* ---------------------- BETÖLTÉS A KALKULÁTORBÓL ---------------------- */
+function bookings(){try{return JSON.parse(localStorage.getItem(BKEY)||'[]');}catch(e){return [];}}
+function openModal(html){document.getElementById('modalBox').innerHTML=html;document.getElementById('modal').classList.add('show');}
+function closeModal(){document.getElementById('modal').classList.remove('show');}
+document.getElementById('modal').onclick=e=>{if(e.target.id==='modal')closeModal();};
+
+document.getElementById('btnLoadBooking').onclick=()=>{
+  const bks=bookings();
+  if(!bks.length){
+    openModal('<h3>Nincs beérkezett foglalás</h3><p style="font-size:.9rem;color:#5b7282">Ebben a böngészőben nincs elmentett foglalás '
+      +'(<code>tc_bookings_v1</code>). Adj le egyet a foglalási oldalon, vagy építsd fel a tételeket kézzel a bal oldali szerkesztőben.</p>'
+      +'<button class="btn btn-ghost" onclick="closeModal()">Bezárás</button>');
+    return;
+  }
+  let h='<h3>Melyik foglalásból készüljön az ajánlat?</h3>';
+  h+=bks.slice().reverse().map((b,ri)=>{
+    const i=bks.length-1-ri;
+    return '<div class="pick" data-bk="'+i+'"><b>'+esc(b.customer?.name||'Névtelen')+' – '+fmt(b.total)+'</b>'
+      +'<small>'+new Date(b.created).toLocaleString('hu-HU')+' · '+(b.items?.length||0)+' tétel · '
+      +esc(b.customer?.zip||'')+' '+esc(b.customer?.address||'')+'</small></div>';
+  }).join('');
+  h+='<button class="btn btn-ghost" onclick="closeModal()">Mégse</button>';
+  openModal(h);
+  document.querySelectorAll('[data-bk]').forEach(el=>el.onclick=()=>{importBooking(bookings()[+el.dataset.bk]);closeModal();});
+};
+
+function importBooking(b){
+  if(!b)return;
+  offer.customer={
+    name:b.customer?.name||'', city:[b.customer?.zip,''].filter(Boolean).join(' ').trim(),
+    address:b.customer?.address||'', phone:b.customer?.phone||'', email:b.customer?.email||''
+  };
+  offer.items=[];
+  (b.items||[]).forEach(it=>{
+    if(it.unitPrice!==undefined&&it.qty!==undefined){
+      // strukturált tétel (új foglalás-formátum)
+      offer.items.push({name:it.name+' tisztítás',desc:it.material||'',qty:+it.qty,unit:it.unit||'db',
+        unitPrice:Math.round(+it.unitPrice||0),discPct:0,optional:false});
+      (it.stains||[]).forEach(s=>offer.items.push({name:'Folteltávolítás – '+s.name,
+        desc:it.name+' tételhez',qty:1,unit:'alkalom',unitPrice:Math.round(+s.price||0),discPct:0,optional:false}));
+      (it.addons||[]).forEach(a=>offer.items.push({name:a.name,
+        desc:it.name+' tételhez',qty:1,unit:'alkalom',unitPrice:Math.round(+a.price||0),discPct:0,optional:false}));
+    }else{
+      // régi formátum: csak felirat + összeg
+      offer.items.push({name:it.label||'Tétel',desc:'',qty:1,unit:'alkalom',
+        unitPrice:Math.round(+it.total||0),discPct:0,optional:false});
+    }
+  });
+  // kiszállási díj: a foglalásban rögzített összeg, hogy az ajánlat végösszege egyezzen
+  if(+b.travelFee>0){
+    offer.items.push({name:'Kiszállási díj',unit:'alkalom',qty:1,unitPrice:Math.round(+b.travelFee),
+      desc:'Budapest és Pest vármegye. A díj tartalmazza a parkolást és a felhasznált vegyszereket.',
+      discPct:0,optional:false});
+  }
+  if(b.property&&b.property.type){
+    const names={csaladi:'Családi ház',tarsashaz:'Társasház – földszint',emeletes:'Emeletes lakás'};
+    let p=names[b.property.type]||b.property.type;
+    if(b.property.type==='emeletes')p+=' – '+(b.property.floor||'?')+'. emelet, '+(b.property.lift?'lifttel':'lift nélkül');
+    offer.subject='Kárpittisztítás – '+p;
+  }
+  if(b.deposit)offer.deposit=+b.deposit||0;
+  if(b.photos&&b.photos.length)offer.photos=b.photos.slice(0,6);
+  if(b.customer?.note)offer.note=(offer.note||'')+'\n\nAz Ön megjegyzése: '+b.customer.note;
+  offer.no=nextNo();
+  renderFields();renderItems();renderDiscs();renderPhotos();
+  toast('✓ Foglalás betöltve');
+}
+
+/* ---------------------- ARCHÍVUM ---------------------- */
+function archive(){try{return JSON.parse(localStorage.getItem(OKEY)||'[]');}catch(e){return [];}}
+function saveArchive(a){
+  try{localStorage.setItem(OKEY,JSON.stringify(a));return true;}
+  catch(e){
+    try{localStorage.setItem(OKEY,JSON.stringify(a.map(o=>Object.assign({},o,{photos:[]}))));return true;}catch(e2){return false;}
+  }
+}
+document.getElementById('btnSave').onclick=()=>{
+  const a=archive();
+  const i=a.findIndex(o=>o.no===offer.no);
+  const rec=Object.assign(clone(offer),{savedAt:Date.now(),grand:calc().gross});
+  if(i>=0)a[i]=rec; else a.push(rec);
+  if(saveArchive(a)){bumpNo(offer.no);toast('✓ Ajánlat elmentve ('+offer.no+')');}
+  else toast('⚠ Nem fért el – próbáld fotók nélkül');
+  autosave();
+};
+document.getElementById('btnArchive').onclick=()=>{
+  const a=archive();
+  if(!a.length){openModal('<h3>Nincs mentett ajánlat</h3><button class="btn btn-ghost" onclick="closeModal()">Bezárás</button>');return;}
+  let h='<h3>Mentett ajánlatok</h3>';
+  h+=a.slice().reverse().map((o,ri)=>{
+    const i=a.length-1-ri;
+    return '<div class="pick" data-op="'+i+'"><b>'+esc(o.no)+' – '+esc(o.customer?.name||'—')+' · '+fmt(o.grand||0)+'</b>'
+      +'<small>'+esc(o.date||'')+' · '+(o.items?.length||0)+' tétel &nbsp;'
+      +'<span style="color:#c0392b;cursor:pointer" data-opdel="'+i+'">[törlés]</span></small></div>';
+  }).join('');
+  h+='<button class="btn btn-ghost" onclick="closeModal()">Mégse</button>';
+  openModal(h);
+  document.querySelectorAll('[data-op]').forEach(el=>el.onclick=ev=>{
+    if(ev.target.dataset.opdel!==undefined){
+      const arr=archive();arr.splice(+ev.target.dataset.opdel,1);saveArchive(arr);closeModal();
+      document.getElementById('btnArchive').click();return;
+    }
+    offer=Object.assign(newOffer(),archive()[+el.dataset.op]);
+    delete offer.savedAt;delete offer.grand;
+    renderFields();renderItems();renderDiscs();renderPhotos();closeModal();toast('✓ Betöltve');
+  });
+};
+document.getElementById('btnNew').onclick=()=>{
+  if(!confirm('Új, üres ajánlat? A jelenlegi elveszik, ha nem mentetted el.'))return;
+  const seller=clone(offer.seller);
+  offer=newOffer();offer.seller=seller;
+  renderFields();renderItems();renderDiscs();renderPhotos();
+};
+
+/* ---------------------- KIMENET ---------------------- */
+document.getElementById('btnPrint').onclick=()=>window.print();
+
+function safeName(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9]+/g,'_').replace(/^_|_$/g,'');}
+document.getElementById('btnHtml').onclick=()=>{
+  const html='<!DOCTYPE html>\n<html lang="hu">\n<head>\n<meta charset="UTF-8">\n'
+    +'<meta name="viewport" content="width=device-width, initial-scale=1.0">\n'
+    +'<title>'+esc(offer.docTitle||'Árajánlat')+' '+esc(offer.no)+' – '+esc(offer.seller.name||'')+'</title>\n'
+    +'<style>body{margin:0;background:#eef2f5;padding:18px}\n'
+    +'@media print{body{background:#fff;padding:0}@page{size:A4;margin:11mm}}\n'
+    +'.d-shadow{max-width:840px;margin:0 auto;background:#fff;border-radius:12px;box-shadow:0 4px 22px rgba(0,0,0,.10);overflow:hidden}\n'
+    +'@media print{.d-shadow{box-shadow:none;border-radius:0;max-width:none}}\n'
+    +DOC_CSS+'\n</style>\n</head>\n<body>\n<div class="d-shadow">'+docHtml()+'</div>\n</body>\n</html>';
+  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=(safeName(offer.docTitle)||'Arajanlat')+'_'+safeName(offer.no)+(offer.customer.name?'_'+safeName(offer.customer.name):'')+'.html';
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+  toast('✓ HTML letöltve – csatolható e-mailhez');
+};
+
+document.getElementById('btnMail').onclick=()=>{
+  const t=calc();
+  const validTo=addDays(offer.date,offer.validDays);
+  const lines=offer.items.filter(i=>!i.optional&&i.type!=='pagebreak').map(it=>{
+    const c=itemCalc(it);
+    return '• '+it.name+' – '+qty2s(it.qty)+' '+(it.unit||'')+' × '+fmt(c.eff)+(c.disc>0?' (−'+qty2s(c.disc)+'%)':'')+' = '+fmt(c.net);
+  }).join('\n');
+  const opt=offer.items.filter(i=>i.optional&&i.type!=='pagebreak');
+  // Érvényesség = 0 → nem ajánlat, hanem utólagos elszámolás: más a felütés, és nincs lejárat.
+  const isOffer=+offer.validDays>0;
+  const body='Kedves '+(offer.customer.name||'Érdeklődő')+'!\n\n'
+    +(isOffer
+      ? 'Köszönjük az érdeklődést! Az alábbi árajánlatot állítottuk össze ('+offer.no+'):\n\n'
+      : 'Köszönjük a bizalmat! Az elvégzett munkáról az alábbi elszámolást küldjük ('+offer.no+'):\n\n')
+    +lines+'\n'
+    +(t.dlines.length?'\n'+t.dlines.map(d=>d.label+': '+fmtNeg(d.amt)).join('\n')+'\n':'')
+    +'\nVégösszeg: '+fmt(t.gross)+(t.saving>0?'  (kedvezmény: '+fmt(t.saving)+')':'')+'\n'
+    +(opt.length?'\nVálasztható kiegészítők:\n'+opt.map(o=>'• '+o.name+' – '+fmt(itemCalc(o).net)).join('\n')+'\n':'')
+    +(isOffer&&validTo?'\nAz ajánlat '+validTo+'-ig érvényes.\n':'')
+    +(offer.showBank&&offer.seller.account
+      ? '\nUtalási adatok:\n'+(offer.seller.name||'')+(offer.seller.bankName?' · '+offer.seller.bankName:'')
+        +'\n'+offer.seller.account+(offer.bankRef?'\nKözlemény: '+offer.bankRef:'')+'\n'
+      : '')
+    +'\n'
+    +(offer.note?offer.note+'\n\n':'')
+    +'Üdvözlettel:\n'+(offer.seller.name||'')+'\n'+(offer.seller.phone||'')+'\n'+(offer.seller.web||'');
+  const mail='mailto:'+encodeURIComponent(offer.customer.email||'')
+    +'?subject='+encodeURIComponent((offer.docTitle||'Árajánlat')+' – '+(offer.subject||'')+' ('+offer.no+')')
+    +'&body='+encodeURIComponent(body);
+  openModal('<h3>Kísérőlevél</h3>'
+    +'<textarea id="mailTxt" rows="16" style="width:100%;font-size:.85rem">'+esc(body)+'</textarea>'
+    +'<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">'
+    +'<a class="btn btn-primary" style="text-decoration:none" href="'+mail+'">✉ Megnyitás levelezőben</a>'
+    +'<button class="btn btn-ghost" id="copyMail">⧉ Másolás vágólapra</button>'
+    +'<button class="btn btn-ghost" onclick="closeModal()">Bezárás</button></div>'
+    +'<p style="font-size:.78rem;color:#5b7282;margin-top:10px">Tipp: a levélhez csatold a „⬇ HTML mentése” gombbal letöltött fájlt, vagy a kinyomtatott PDF-et.</p>');
+  document.getElementById('copyMail').onclick=()=>{
+    const ta=document.getElementById('mailTxt');ta.select();
+    navigator.clipboard.writeText(ta.value).then(()=>toast('✓ Vágólapra másolva'),()=>toast('⚠ Nem sikerült'));
+  };
+};
+
+/* ---------------------- INDULÁS ---------------------- */
+fillQuickAdd();
+renderFields();
+renderItems();
+renderDiscs();
+renderPhotos();
+
+// az admin „Árajánlat készítése" gombja itt adja át a foglalást
+(function pickFromAdmin(){
+  let pick=null;
+  try{const s=localStorage.getItem('tc_offer_pick_v1');if(s)pick=JSON.parse(s);}catch(e){}
+  if(!pick)return;
+  localStorage.removeItem('tc_offer_pick_v1');
+  const b=bookings().find(x=>x.created===pick.created);
+  if(b)importBooking(b);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Online foglalás – Jobbmint Kárpittisztítás</title>
+<style>
+  :root{--bg:#f4f7f9;--card:#fff;--ink:#1c2b33;--muted:#5b7282;--brand:#0e7c86;--brand2:#3aa6a0;
+    --accent:#e8f5f4;--line:#dde7ec;--ok:#157347;--okbg:#e9f7ef;--sel:#0e7c86;--warn:#b35900;--warnbg:#fff4e6;}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Segoe UI",system-ui,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.55}
+  header{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;padding:28px 20px;text-align:center}
+  header h1{margin:0 0 4px;font-size:1.5rem}
+  header p{margin:0;opacity:.95;font-size:.95rem}
+  .layout{max-width:1060px;margin:18px auto;padding:0 16px;display:grid;grid-template-columns:1fr 320px;gap:18px;align-items:start}
+  @media(max-width:860px){.layout{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px;box-shadow:0 2px 10px rgba(0,0,0,.05)}
+  .steps{display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap}
+  .steps .s{flex:1;min-width:70px;text-align:center;font-size:.78rem;color:var(--muted);padding:8px 4px;border-radius:8px;background:#f0f4f6;font-weight:600}
+  .steps .s.active{background:var(--brand);color:#fff}
+  .steps .s.done{background:var(--accent);color:var(--brand)}
+  h2.q{margin:0 0 14px;font-size:1.25rem;color:var(--ink)}
+  .opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+  .opt{border:2px solid var(--line);border-radius:12px;padding:14px;cursor:pointer;text-align:center;transition:.15s;background:#fff;font-weight:600}
+  .opt:hover{border-color:var(--brand2)}
+  .opt.sel{border-color:var(--sel);background:var(--accent)}
+  .opt .sub{display:block;font-weight:400;font-size:.8rem;color:var(--muted);margin-top:4px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{border:2px solid var(--line);border-radius:30px;padding:8px 14px;cursor:pointer;font-size:.9rem;font-weight:600;background:#fff;transition:.15s}
+  .chip:hover{border-color:var(--brand2)}
+  .chip.sel{border-color:var(--sel);background:var(--brand);color:#fff}
+  .qtybox{display:flex;align-items:center;gap:12px;margin:14px 0}
+  .qtybox button{width:42px;height:42px;border:1px solid var(--line);background:#fff;border-radius:10px;font-size:1.4rem;cursor:pointer;font-weight:700;color:var(--brand)}
+  .qtybox input{width:80px;text-align:center;font-size:1.2rem;border:1px solid var(--line);border-radius:10px;padding:8px}
+  .nav{display:flex;justify-content:space-between;margin-top:20px;gap:10px}
+  .btn{border:none;border-radius:10px;padding:12px 20px;cursor:pointer;font-weight:700;font-size:.95rem}
+  .btn-primary{background:var(--brand);color:#fff}
+  .btn-primary:disabled{background:#9bb8bb;cursor:not-allowed}
+  .btn-ghost{background:#fff;border:1px solid var(--line);color:var(--ink)}
+  .btn-add{background:var(--accent);color:var(--brand)}
+  .summary h3{margin:0 0 10px;color:var(--brand);font-size:1.05rem}
+  .cartline{display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px dashed var(--line);font-size:.9rem}
+  .cartline small{color:var(--muted);display:block}
+  .cartline .del{color:#c0392b;cursor:pointer;font-weight:700}
+  .totrow{display:flex;justify-content:space-between;margin-top:8px;font-size:.92rem}
+  .totrow.big{font-size:1.15rem;font-weight:800;color:var(--brand);border-top:2px solid var(--accent);padding-top:8px;margin-top:8px}
+  .empty{color:var(--muted);font-size:.9rem;text-align:center;padding:20px 0}
+  .field{margin:12px 0}.field label{display:block;font-weight:600;margin-bottom:4px;font-size:.9rem}
+  .field input,.field textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:10px;font-size:.95rem;font-family:inherit}
+  .field .req{color:#c0392b}
+  .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:8px}
+  .cal .dow{text-align:center;font-size:.72rem;color:var(--muted);font-weight:700;padding:4px 0}
+  .cal .day{aspect-ratio:1;border:1px solid var(--line);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.85rem;background:#fff}
+  .cal .day.empty{border:none;background:transparent;cursor:default}
+  .cal .day.past{color:#c3ccd1;background:#f6f8f9;cursor:not-allowed}
+  .cal .day.sel{background:var(--brand);color:#fff;border-color:var(--brand);font-weight:700}
+  .calhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .calhead button{background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer;font-weight:700}
+  .risk{background:var(--warnbg);border-left:4px solid var(--warn);padding:8px 12px;border-radius:6px;font-size:.85rem;color:#5a3000;margin-top:10px}
+  .ok{background:var(--okbg);border-left:4px solid var(--ok);padding:14px 16px;border-radius:8px;margin:10px 0}
+  .selnote{font-size:.82rem;color:var(--muted);margin-top:6px}
+  .timepref{display:flex;gap:8px;flex-wrap:wrap}
+  .timepref label{border:2px solid var(--line);border-radius:10px;padding:8px 14px;cursor:pointer;font-weight:600}
+  .timepref input{display:none}
+  .timepref input:checked + span{}
+  .timepref label:has(input:checked){border-color:var(--sel);background:var(--accent)}
+  pre.sum{background:#f6f8f9;border:1px solid var(--line);border-radius:8px;padding:12px;white-space:pre-wrap;font-size:.85rem}
+  footer{text-align:center;color:var(--muted);font-size:.8rem;padding:18px}
+  footer a{color:var(--muted)}
+  .photos{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+  .thumb{position:relative;width:78px;height:78px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+  .thumb img{width:100%;height:100%;object-fit:cover}
+  .thumb .rm{position:absolute;top:2px;right:2px;background:rgba(0,0,0,.6);color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.8rem}
+  .uploadbtn{display:inline-block;border:2px dashed var(--brand2);color:var(--brand);border-radius:10px;padding:10px 16px;cursor:pointer;font-weight:600;font-size:.9rem}
+  .uploadbtn:hover{background:var(--accent)}
+  .nophoto{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:.9rem;cursor:pointer;background:#f6f8f9;border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+  .nophoto input{width:auto}
+  .nophoto-note{background:var(--warnbg);border-left:4px solid var(--warn);padding:8px 12px;border-radius:6px;font-size:.85rem;color:#5a3000;margin-top:8px}
+</style>
+</head>
+<body>
+<header>
+  <h1 id="bizName">✨ Online tisztítás-foglalás</h1>
+  <p>Pár kattintással kiszámoljuk az árat, és felkeresünk az általad megadott időpontban.</p>
+</header>
+
+<div class="layout">
+  <!-- MAIN -->
+  <div class="card" id="main">
+    <div class="steps" id="steps">
+      <div class="s" data-st="property">1 · Ingatlan</div>
+      <div class="s" data-st="build">2 · Tételek</div>
+      <div class="s" data-st="calendar">3 · Időpont</div>
+      <div class="s" data-st="form">4 · Adatok</div>
+      <div class="s" data-st="done">5 · Kész</div>
+    </div>
+    <div id="view"></div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="card summary" id="summaryCard">
+    <h3>🧾 Kosár / kalkuláció</h3>
+    <div id="cartBox"></div>
+    <div id="totals"></div>
+    <div class="selnote">Az árak tájékoztató jellegűek; helyszíni felmérés módosíthatja.</div>
+  </div>
+</div>
+
+<footer>
+  <span id="bizFoot"></span> · <a href="arkalkulator_admin.html">Admin</a>
+</footer>
+
+<script>
+const KEY='tc_pricing_v1', BKEY='tc_bookings_v1';
+const CFG_VERSION=2;
+const DEFAULTS={
+  cfgVersion:CFG_VERSION,
+  settings:{businessName:'Jobbmint',currency:'Ft',minFee:6000,travelFee:6000,deposit:4000,notifyEmail:'skillsharemot@gmail.com'},
+  services:[
+    {id:'kanape',name:'Kanapé / ülőgarnitúra',unit:'ülőhely',price:4000,material:true},
+    {id:'fotel',name:'Fotel',unit:'db',price:4000,material:true},
+    {id:'szonyeg',name:'Szőnyeg',unit:'m²',price:900,material:true},
+    {id:'auto',name:'Autóülés (szövet)',unit:'ülés',price:4500,material:true},
+    {id:'fuggony',name:'Függöny',unit:'db',price:2000,material:false},
+    {id:'matrac',name:'Matrac',unit:'db',price:6000,material:false},
+    {id:'puff',name:'Puff / ülőke',unit:'db',price:2500,material:false},
+    {id:'uvporszivo',name:'UV-s fertőtlenítő porszívózás (száraz, víz nélkül)',unit:'db',price:4500,material:false}
+  ],
+  materials:[
+    {id:'szint',name:'Szintetikus (PP / poliészter)',mult:1.0,risk:'Alacsony kockázat – gyorsan szárad'},
+    {id:'pamut',name:'Pamut / kevert',mult:1.2,risk:'Közepes kockázat'},
+    {id:'gyapju',name:'Gyapjú',mult:1.8,risk:'Magas – extra kíméletes kezelés, írásos belegyezés'},
+    {id:'barsony',name:'Bársony / viszkóz',mult:2.0,risk:'Magas – száraz módszer, NEM bő víz'}
+  ],
+  stains:[
+    {id:'folt1',name:'Folt 1 – friss, vizes (kávé, tea, üdítő, bor, ételfolt)',price:1500},
+    {id:'folt2',name:'Folt 2 – zsíros vagy régi (olaj, csoki, toll, rágógumi, viasz)',price:3500},
+    {id:'folt3',name:'Folt 3 – szagos vagy biológiai (vizelet, vér, hányás, dohányszag)',price:6500}
+  ],
+  addons:[
+    {id:'porszivo',name:'Porszívózás a tisztítás előtt',type:'fix',value:1500},
+    {id:'impreg',name:'Impregnálás (védőréteg)',type:'pct',value:0.5},
+    {id:'kartamasz',name:'Kartámasz tisztítás',type:'fix',value:1500},
+    {id:'gyorsszar',name:'Gyorsszárítás (ventilátor)',type:'fix',value:2000}
+  ],
+  chemicals:[],machines:[]
+};
+function clone(o){return JSON.parse(JSON.stringify(o));}
+// v2 migráció: a foltok 3 csoportra álltak össze (a régi 10 tétel kikerül a vevői választóból)
+function migrate(c,storedVer){
+  // FONTOS: a MENTETT verziót kell nézni, nem a DEFAULTS-szal összefésültét
+  if((+storedVer||0) >= CFG_VERSION) return c;
+  c.stains=clone(DEFAULTS.stains);
+  c.services=c.services||[];
+  DEFAULTS.services.forEach(d=>{ if(!c.services.some(x=>x.id===d.id)) c.services.push(clone(d)); });
+  c.cfgVersion=CFG_VERSION;
+  return c;
+}
+function load(){try{const s=localStorage.getItem(KEY);if(s){const p=JSON.parse(s);const c=Object.assign(clone(DEFAULTS),p);
+  // a mentett settings felülírná a DEFAULTS-ot: az új kulcsokat (pl. travelFee) vissza kell tölteni
+  c.settings=Object.assign(clone(DEFAULTS.settings),c.settings||{});return migrate(c,p.cfgVersion);}}catch(e){}return clone(DEFAULTS);}
+const cfg=load();
+const CUR=cfg.settings.currency||'Ft';
+// minden ezrest tagol (a hu-HU locale a négyjegyűeket nem tagolná), nem törhető szóközzel
+function fmt(n){return String(Math.round(+n||0)).replace(/\B(?=(\d{3})+(?!\d))/g,' ')+' '+CUR;}
+document.getElementById('bizName').textContent='✨ '+(cfg.settings.businessName||'Online')+' – tisztítás-foglalás';
+document.getElementById('bizFoot').textContent=cfg.settings.businessName||'';
+
+// STATE
+let view='property', buildStep=1;
+let property={type:null,floor:'',lift:null}; // type: csaladi|tarsashaz|emeletes
+let cart=[];
+let draft=null; // {serviceId, qty, materialId, stains:[], addons:[]}
+let dates=new Set();
+let calRef=new Date(); calRef.setDate(1);
+let customer={name:'',phone:'',email:'',zip:'',address:'',note:'',timepref:'Rugalmas'};
+let photos=[];      // array of base64 data URLs
+let noPhoto=false;  // "jelenleg nem tudok képet csinálni"
+
+const viewEl=document.getElementById('view');
+
+function svc(id){return cfg.services.find(s=>s.id===id);}
+function mat(id){return cfg.materials.find(m=>m.id===id);}
+
+function itemTotal(it){
+  const s=svc(it.serviceId);if(!s)return 0;
+  const m=(s.material&&it.materialId)?mat(it.materialId):null;
+  const mult=m?(+m.mult||1):1;
+  const base=(+s.price)*(+it.qty)*mult;
+  let stainSum=0;(it.stains||[]).forEach(id=>{const st=cfg.stains.find(x=>x.id===id);if(st)stainSum+=+st.price;});
+  let addonSum=0;(it.addons||[]).forEach(id=>{const a=cfg.addons.find(x=>x.id===id);if(a)addonSum+=a.type==='pct'?base*(+a.value):(+a.value);});
+  return base+stainSum+addonSum;
+}
+// tételes bontás – ebből tud az árajánlat-készítő mennyiség/egységár oszlopot csinálni
+function itemBreakdown(it){
+  const s=svc(it.serviceId);if(!s)return null;
+  const m=(s.material&&it.materialId)?mat(it.materialId):null;
+  const mult=m?(+m.mult||1):1;
+  const unitPrice=(+s.price)*mult;
+  const base=unitPrice*(+it.qty);
+  const stains=(it.stains||[]).map(id=>{const x=cfg.stains.find(y=>y.id===id);return x?{name:x.name,price:+x.price}:null;}).filter(Boolean);
+  const addons=(it.addons||[]).map(id=>{const a=cfg.addons.find(y=>y.id===id);
+    return a?{name:a.name,price:a.type==='pct'?base*(+a.value):(+a.value)}:null;}).filter(Boolean);
+  return {serviceId:it.serviceId,name:s.name,unit:s.unit,qty:+it.qty,
+    material:m?m.name:'',mult,unitPrice,base,stains,addons};
+}
+function itemLabel(it){
+  const s=svc(it.serviceId);const m=(s.material&&it.materialId)?mat(it.materialId):null;
+  let parts=[s.name+' × '+it.qty+' '+s.unit];
+  if(m)parts.push(m.name);
+  const sn=(it.stains||[]).map(id=>cfg.stains.find(x=>x.id===id)?.name).filter(Boolean);
+  const an=(it.addons||[]).map(id=>cfg.addons.find(x=>x.id===id)?.name).filter(Boolean);
+  if(sn.length)parts.push('Folt: '+sn.join(', '));
+  if(an.length)parts.push('+ '+an.join(', '));
+  return parts.join(' · ');
+}
+function computeOrder(){
+  const sub=cart.reduce((s,it)=>s+itemTotal(it),0);
+  const minFee=+cfg.settings.minFee||0;
+  // szolgáltatás-érték: a részösszeg, de legalább a minimum rendelési érték
+  const svc=cart.length?Math.max(sub,minFee):0;
+  // kiszállási díj: fix tétel a szolgáltatás-értéken FELÜL, csak ha van tétel a kosárban
+  const travelFee=cart.length?(+cfg.settings.travelFee||0):0;
+  const applied=svc+travelFee;
+  const deposit=cart.length?(+cfg.settings.deposit||0):0;
+  return {sub,svc,travelFee,applied,minFeeHit:cart.length&&sub<minFee,deposit,onsite:Math.max(applied-deposit,0)};
+}
+
+// ---- SUMMARY ----
+function renderSummary(){
+  const box=document.getElementById('cartBox');
+  if(!cart.length){box.innerHTML='<div class="empty">Még nincs hozzáadott tétel.<br>Válassz szolgáltatást!</div>';document.getElementById('totals').innerHTML='';return;}
+  box.innerHTML=cart.map((it,i)=>'<div class="cartline"><div><strong>'+fmt(itemTotal(it))+'</strong><small>'+itemLabel(it)+'</small></div><span class="del" data-rm="'+i+'">✕</span></div>').join('');
+  const o=computeOrder();
+  let h='';
+  h+='<div class="totrow"><span>Részösszeg</span><span>'+fmt(o.sub)+'</span></div>';
+  if(o.minFeeHit)h+='<div class="totrow"><span>Minimum rendelési érték</span><span>'+fmt(o.svc)+'</span></div>';
+  if(o.travelFee>0)h+='<div class="totrow"><span>Kiszállási díj</span><span>'+fmt(o.travelFee)+'</span></div>';
+  h+='<div class="totrow big"><span>Végösszeg</span><span>'+fmt(o.applied)+'</span></div>';
+  h+='<div class="totrow"><span>Foglalási előleg</span><span>'+fmt(o.deposit)+'</span></div>';
+  h+='<div class="totrow"><span>Helyszínen fizetendő</span><span>'+fmt(o.onsite)+'</span></div>';
+  document.getElementById('totals').innerHTML=h;
+  box.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{cart.splice(+b.dataset.rm,1);renderSummary();if(view==='build')render();});
+}
+
+// ---- STEPS HEADER ----
+function renderSteps(){
+  const order=['property','build','calendar','form','done'];
+  const cur=order.indexOf(view);
+  document.querySelectorAll('#steps .s').forEach(el=>{
+    const i=order.indexOf(el.dataset.st);
+    el.classList.toggle('active',el.dataset.st===view);
+    el.classList.toggle('done',i<cur);
+  });
+}
+
+// ---- MAIN RENDER ----
+function render(){
+  renderSteps();renderSummary();
+  if(view==='property')return renderProperty();
+  if(view==='build')return renderBuild();
+  if(view==='calendar')return renderCalendar();
+  if(view==='form')return renderForm();
+  if(view==='done')return renderDone();
+}
+
+// ---- PROPERTY (house type filter) ----
+const PROP_TYPES=[
+  {id:'csaladi',name:'Családi ház',sub:'Földszintes bejárat'},
+  {id:'tarsashaz',name:'Társasház – földszint',sub:'Nincs lépcső / emelet'},
+  {id:'emeletes',name:'Emeletes lakás',sub:'Emeleten van a lakás'}
+];
+function propLabel(p){
+  if(!p||!p.type)return '-';
+  const t=PROP_TYPES.find(x=>x.id===p.type);
+  let s=t?t.name:p.type;
+  if(p.type==='emeletes'){
+    s+=' – '+(p.floor||'?')+'. emelet, '+(p.lift===true?'van lift':p.lift===false?'nincs lift':'lift?');
+  }
+  return s;
+}
+function canLeaveProperty(){
+  if(!property.type)return false;
+  if(property.type==='emeletes'){
+    return (parseInt(property.floor,10)>0)&&(property.lift===true||property.lift===false);
+  }
+  return true;
+}
+function renderProperty(){
+  let h='<h2 class="q">Milyen típusú az ingatlan?</h2>';
+  h+='<div class="opts" id="ptypes"></div>';
+  h+='<div id="emBox"></div>';
+  h+='<div class="nav"><span></span><button class="btn btn-primary" id="toBuild" '+(canLeaveProperty()?'':'disabled')+'>Tovább a tételekhez →</button></div>';
+  viewEl.innerHTML=h;
+  const pt=document.getElementById('ptypes');
+  PROP_TYPES.forEach(t=>{
+    const d=document.createElement('div');d.className='opt'+(property.type===t.id?' sel':'');
+    d.innerHTML=t.name+'<span class="sub">'+t.sub+'</span>';
+    d.onclick=()=>{property.type=t.id;if(t.id!=='emeletes'){property.floor='';property.lift=null;}render();};
+    pt.appendChild(d);
+  });
+  if(property.type==='emeletes'){
+    const em=document.getElementById('emBox');
+    let e='<div class="field"><label>Hányadik emelet? <span class="req">*</span></label>'
+      +'<input type="number" id="p_floor" min="1" step="1" value="'+esc(String(property.floor||''))+'" placeholder="pl. 3"></div>';
+    e+='<p style="font-weight:600;margin:6px 0">Van lift?</p><div class="chips" id="lifts">'
+      +'<div class="chip'+(property.lift===true?' sel':'')+'" data-lift="1">Van lift</div>'
+      +'<div class="chip'+(property.lift===false?' sel':'')+'" data-lift="0">Nincs lift</div></div>';
+    e+='<div id="liftNote"></div>';
+    em.innerHTML=e;
+    document.getElementById('p_floor').oninput=ev=>{property.floor=ev.target.value;updateLiftNote();const tb=document.getElementById('toBuild');if(tb)tb.disabled=!canLeaveProperty();};
+    em.querySelectorAll('[data-lift]').forEach(c=>c.onclick=()=>{property.lift=c.dataset.lift==='1';render();});
+    updateLiftNote();
+  }
+  document.getElementById('toBuild').onclick=()=>{if(!canLeaveProperty())return;view='build';render();};
+}
+function updateLiftNote(){
+  const el=document.getElementById('liftNote');if(!el)return;
+  const fl=parseInt(property.floor,10)||0;
+  if(property.lift===false&&fl>=2){
+    el.innerHTML='<div class="risk">⚠️ Lift nélkül a '+fl+'. emeletre nagyobb/nehéz bútorok (kanapé, matrac) felhordása nehézkes lehet – ezt a felmérésnél figyelembe vesszük.</div>';
+  }else el.innerHTML='';
+}
+
+function renderBuild(){
+  if(!draft)draft={serviceId:null,qty:1,materialId:null,stains:[],addons:[]};
+  const s=draft.serviceId?svc(draft.serviceId):null;
+  // sub-steps: 1 service, 2 qty+material, 3 stains+addons
+  if(buildStep===1){
+    viewEl.innerHTML='<h2 class="q">Mit szeretnél tisztíttatni?</h2><div class="opts" id="opts"></div>'
+      +'<div class="nav"><button class="btn btn-ghost" id="toProp">← Vissza az ingatlanhoz</button>'
+      +(cart.length?'<button class="btn btn-primary" id="toCal">Tovább az időponthoz →</button>':'<span></span>')+'</div>';
+    const o=document.getElementById('opts');
+    cfg.services.forEach(sv=>{
+      const d=document.createElement('div');d.className='opt'+(draft.serviceId===sv.id?' sel':'');
+      d.innerHTML=sv.name+'<span class="sub">'+fmt(sv.price)+' / '+sv.unit+'</span>';
+      d.onclick=()=>{draft.serviceId=sv.id;draft.materialId=null;buildStep=2;render();};
+      o.appendChild(d);
+    });
+    document.getElementById('toProp').onclick=()=>{view='property';render();};
+    const tc=document.getElementById('toCal');if(tc)tc.onclick=()=>{view='calendar';render();};
+    return;
+  }
+  if(buildStep===2){
+    let h='<h2 class="q">'+s.name+' – mennyiség'+(s.material?' és anyag':'')+'</h2>';
+    h+='<div class="qtybox"><button id="minus">−</button><input type="number" id="qty" min="0.1" step="'+(s.unit==='m²'?'0.1':'1')+'" value="'+draft.qty+'"><button id="plus">＋</button><span>'+s.unit+'</span></div>';
+    if(s.material){
+      h+='<p style="font-weight:600;margin:6px 0">Milyen anyagból van?</p><div class="opts" id="mats"></div><div id="riskBox"></div>';
+    }
+    h+='<div class="nav"><button class="btn btn-ghost" id="back">← Vissza</button><button class="btn btn-primary" id="next" '+(s.material&&!draft.materialId?'disabled':'')+'>Tovább →</button></div>';
+    viewEl.innerHTML=h;
+    const qty=document.getElementById('qty');
+    const setQ=v=>{draft.qty=Math.max(s.unit==='m²'?0.1:1,v);qty.value=draft.qty;renderSummary();};
+    document.getElementById('minus').onclick=()=>setQ((+draft.qty)-(s.unit==='m²'?0.5:1));
+    document.getElementById('plus').onclick=()=>setQ((+draft.qty)+(s.unit==='m²'?0.5:1));
+    qty.oninput=()=>{draft.qty=parseFloat(qty.value)||0;renderSummary();};
+    if(s.material){
+      const mm=document.getElementById('mats');
+      cfg.materials.forEach(m=>{
+        const d=document.createElement('div');d.className='opt'+(draft.materialId===m.id?' sel':'');
+        d.innerHTML=m.name+'<span class="sub">× '+m.mult+'</span>';
+        d.onclick=()=>{draft.materialId=m.id;render();};
+        mm.appendChild(d);
+      });
+      const rb=document.getElementById('riskBox');const cm=draft.materialId?mat(draft.materialId):null;
+      if(cm&&cm.risk)rb.innerHTML='<div class="risk">⚠️ '+cm.name+': '+cm.risk+'</div>';
+    }
+    // qty had a stray button tag fix
+    document.getElementById('back').onclick=()=>{buildStep=1;render();};
+    document.getElementById('next').onclick=()=>{buildStep=3;render();};
+    return;
+  }
+  if(buildStep===3){
+    let h='<h2 class="q">Van folt vagy szag? (több is választható)</h2><div class="chips" id="stains"></div>';
+    h+='<p style="font-weight:600;margin:16px 0 6px">Kiegészítők</p><div class="chips" id="addons"></div>';
+    h+='<div class="risk">💡 A mélytisztítás előtt ajánlott a felületet átporszívózni. Ha inkább ránk bíznád, add hozzá a „Porszívózás” kiegészítőt – mi elvégezzük a tisztítás elején.</div>';
+    h+='<div class="nav"><button class="btn btn-ghost" id="back">← Vissza</button><button class="btn btn-add" id="addItem">＋ Tétel hozzáadása a kosárhoz</button></div>';
+    viewEl.innerHTML=h;
+    const sc=document.getElementById('stains');
+    cfg.stains.forEach(st=>{
+      const c=document.createElement('div');c.className='chip'+(draft.stains.includes(st.id)?' sel':'');
+      c.textContent=st.name+' (+'+fmt(st.price)+')';
+      c.onclick=()=>{const i=draft.stains.indexOf(st.id);i<0?draft.stains.push(st.id):draft.stains.splice(i,1);render();};
+      sc.appendChild(c);
+    });
+    const ac=document.getElementById('addons');
+    cfg.addons.forEach(a=>{
+      const lbl=a.type==='pct'?('+'+Math.round(a.value*100)+'%'):('+'+fmt(a.value));
+      const c=document.createElement('div');c.className='chip'+(draft.addons.includes(a.id)?' sel':'');
+      c.textContent=a.name+' ('+lbl+')';
+      c.onclick=()=>{const i=draft.addons.indexOf(a.id);i<0?draft.addons.push(a.id):draft.addons.splice(i,1);render();};
+      ac.appendChild(c);
+    });
+    document.getElementById('back').onclick=()=>{buildStep=2;render();};
+    document.getElementById('addItem').onclick=()=>{
+      cart.push(clone(draft));draft=null;buildStep=1;render();
+    };
+    return;
+  }
+}
+
+function renderCalendar(){
+  let h='<h2 class="q">Mikor vagy otthon? (jelölj be több napot is)</h2>';
+  h+='<div class="calhead"><button id="prev">‹</button><strong id="mlabel"></strong><button id="nxt">›</button></div>';
+  h+='<div class="cal" id="cal"></div>';
+  h+='<div class="selnote" id="selDates"></div>';
+  h+='<div class="nav"><button class="btn btn-ghost" id="back">← Vissza a tételekhez</button><button class="btn btn-primary" id="toForm" '+(dates.size?'':'disabled')+'>Tovább az adatokhoz →</button></div>';
+  viewEl.innerHTML=h;
+  drawCal();
+  document.getElementById('prev').onclick=()=>{calRef.setMonth(calRef.getMonth()-1);drawCal();};
+  document.getElementById('nxt').onclick=()=>{calRef.setMonth(calRef.getMonth()+1);drawCal();};
+  document.getElementById('back').onclick=()=>{view='build';render();};
+  document.getElementById('toForm').onclick=()=>{view='form';render();};
+}
+function drawCal(){
+  const months=['Január','Február','Március','Április','Május','Június','Július','Augusztus','Szeptember','Október','November','December'];
+  const dows=['H','K','Sze','Cs','P','Szo','V'];
+  const y=calRef.getFullYear(),mo=calRef.getMonth();
+  document.getElementById('mlabel').textContent=y+'. '+months[mo];
+  const today=new Date();today.setHours(0,0,0,0);
+  const first=new Date(y,mo,1);const start=(first.getDay()+6)%7;const din=new Date(y,mo+1,0).getDate();
+  const cal=document.getElementById('cal');let h='';
+  dows.forEach(d=>h+='<div class="dow">'+d+'</div>');
+  for(let i=0;i<start;i++)h+='<div class="day empty"></div>';
+  for(let d=1;d<=din;d++){
+    const dt=new Date(y,mo,d);const iso=y+'-'+String(mo+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const past=dt<today;const sel=dates.has(iso);
+    h+='<div class="day'+(past?' past':'')+(sel?' sel':'')+'" '+(past?'':'data-d="'+iso+'"')+'>'+d+'</div>';
+  }
+  cal.innerHTML=h;
+  cal.querySelectorAll('[data-d]').forEach(el=>el.onclick=()=>{const iso=el.dataset.d;dates.has(iso)?dates.delete(iso):dates.add(iso);drawCal();updateSelDates();
+    const tf=document.getElementById('toForm');if(tf)tf.disabled=!dates.size;});
+  updateSelDates();
+}
+function updateSelDates(){
+  const el=document.getElementById('selDates');if(!el)return;
+  const arr=[...dates].sort();
+  el.innerHTML=arr.length?('Kiválasztott napok: <strong>'+arr.join(', ')+'</strong>'):'Még nincs nap kiválasztva.';
+}
+
+function renderForm(){
+  let h='<h2 class="q">Hova menjünk, és hogyan érünk el?</h2>';
+  h+='<div class="field"><label>Név <span class="req">*</span></label><input id="f_name" value="'+esc(customer.name)+'"></div>';
+  h+='<div class="field"><label>Telefonszám <span class="req">*</span></label><input id="f_phone" value="'+esc(customer.phone)+'"></div>';
+  h+='<div class="field"><label>E-mail</label><input id="f_email" value="'+esc(customer.email)+'"></div>';
+  h+='<div class="field"><label>Irányítószám <span class="req">*</span></label><input id="f_zip" value="'+esc(customer.zip)+'"></div>';
+  h+='<div class="field"><label>Cím <span class="req">*</span></label><input id="f_address" value="'+esc(customer.address)+'"></div>';
+  h+='<div class="field"><label>Időpont preferencia</label><div class="timepref" id="tp">'
+    +['Délelőtt','Délután','Rugalmas'].map(t=>'<label><input type="radio" name="tp" value="'+t+'" '+(customer.timepref===t?'checked':'')+'><span>'+t+'</span></label>').join('')+'</div></div>';
+  h+='<div class="field"><label>Megjegyzés (pl. parkolás, lift, kisállat)</label><textarea id="f_note" rows="3">'+esc(customer.note)+'</textarea></div>';
+  h+='<div class="field"><label>Fotó a foltról / tisztítandó felületről</label>'
+    +'<div class="photos" id="photoList"></div>'
+    +'<label class="uploadbtn" for="f_photo">📷 Fotó hozzáadása</label>'
+    +'<input type="file" id="f_photo" accept="image/*" multiple style="display:none">'
+    +'<label class="nophoto"><input type="checkbox" id="f_nophoto" '+(noPhoto?'checked':'')+'><span>Jelenleg nem tudok róla képet csinálni</span></label>'
+    +'<div id="nophotoNote"></div></div>';
+  h+='<div class="nav"><button class="btn btn-ghost" id="back">← Vissza a naptárhoz</button><button class="btn btn-primary" id="submit">Foglalás elküldése ✓</button></div>';
+  viewEl.innerHTML=h;
+  const bind=(id,k)=>document.getElementById(id).oninput=e=>customer[k]=e.target.value;
+  bind('f_name','name');bind('f_phone','phone');bind('f_email','email');bind('f_zip','zip');bind('f_address','address');bind('f_note','note');
+  document.querySelectorAll('input[name=tp]').forEach(r=>r.onchange=e=>customer.timepref=e.target.value);
+  document.getElementById('f_photo').onchange=e=>{addPhotoFiles(e.target.files);e.target.value='';};
+  document.getElementById('f_nophoto').onchange=e=>{noPhoto=e.target.checked;if(noPhoto)photos=[];renderPhotoList();updateNoPhotoNote();};
+  document.getElementById('back').onclick=()=>{view='calendar';render();};
+  document.getElementById('submit').onclick=submit;
+  renderPhotoList();updateNoPhotoNote();
+}
+function updateNoPhotoNote(){
+  const el=document.getElementById('nophotoNote');if(!el)return;
+  el.innerHTML=noPhoto?'<div class="nophoto-note">📞 Mivel nincs fotó, felvesszük veled telefonon a kapcsolatot, hogy pontosítsuk a folt jellegét.</div>':'';
+}
+function renderPhotoList(){
+  const el=document.getElementById('photoList');if(!el)return;
+  el.innerHTML=photos.map((src,i)=>'<div class="thumb"><img src="'+src+'"><span class="rm" data-ph="'+i+'">✕</span></div>').join('');
+  el.querySelectorAll('[data-ph]').forEach(b=>b.onclick=()=>{photos.splice(+b.dataset.ph,1);renderPhotoList();});
+}
+function addPhotoFiles(files){
+  if(noPhoto){noPhoto=false;const cb=document.getElementById('f_nophoto');if(cb)cb.checked=false;updateNoPhotoNote();}
+  [...files].forEach(file=>{
+    if(!file.type.startsWith('image/'))return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      const img=new Image();
+      img.onload=()=>{
+        const max=1000;let w=img.width,hgt=img.height;
+        if(w>max||hgt>max){if(w>hgt){hgt=Math.round(hgt*max/w);w=max;}else{w=Math.round(w*max/hgt);hgt=max;}}
+        const c=document.createElement('canvas');c.width=w;c.height=hgt;
+        c.getContext('2d').drawImage(img,0,0,w,hgt);
+        photos.push(c.toDataURL('image/jpeg',0.6));
+        renderPhotoList();
+      };
+      img.src=ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+function esc(s){return (s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+
+function submit(){
+  if(!customer.name||!customer.phone||!customer.zip||!customer.address){alert('Kérlek töltsd ki a csillaggal jelölt mezőket (név, telefon, irányítószám, cím).');return;}
+  if(!cart.length){alert('A kosár üres.');return;}
+  if(!dates.size){alert('Jelölj be legalább egy napot, amikor otthon vagy.');view='calendar';render();return;}
+  if(!photos.length&&!noPhoto){alert('Tölts fel legalább egy fotót a foltról, vagy pipáld be, hogy jelenleg nem tudsz képet készíteni.');return;}
+  const o=computeOrder();
+  const booking={created:Date.now(),customer:clone(customer),dates:[...dates].sort(),
+    property:clone(property),photos:photos.slice(),noPhoto:noPhoto,
+    items:cart.map(it=>Object.assign({label:itemLabel(it),total:itemTotal(it)},itemBreakdown(it)||{})),
+    sub:o.sub,travelFee:o.travelFee,total:o.applied,deposit:o.deposit,onsite:o.onsite};
+  let arr=[];try{arr=JSON.parse(localStorage.getItem(BKEY)||'[]');}catch(e){}
+  arr.push(booking);
+  try{
+    localStorage.setItem(BKEY,JSON.stringify(arr));
+  }catch(err){
+    // quota exceeded – strip photos and retry, keep them only in memory for this view
+    const stripped=arr.map(b=>Object.assign({},b,{photos:[],photosDropped:(b.photos&&b.photos.length)||0}));
+    try{localStorage.setItem(BKEY,JSON.stringify(stripped));}catch(e2){}
+  }
+  window._lastBooking=booking;
+  view='done';render();
+}
+
+function renderDone(){
+  const b=window._lastBooking;
+  const lines=b.items.map(it=>'• '+it.label+' — '+fmt(it.total)).join('\n');
+  const body=
+'Új foglalási igény\n'+
+'====================\n'+
+'Név: '+b.customer.name+'\n'+
+'Telefon: '+b.customer.phone+'\n'+
+'E-mail: '+(b.customer.email||'-')+'\n'+
+'Cím: '+b.customer.zip+' '+b.customer.address+'\n'+
+'Ingatlan: '+propLabel(b.property)+'\n'+
+'Fotó: '+(b.noPhoto?'NINCS – telefonon kell egyeztetni!':((b.photos&&b.photos.length)||0)+' db csatolva')+'\n'+
+'Időpont preferencia: '+b.customer.timepref+'\n'+
+'Megjegyzés: '+(b.customer.note||'-')+'\n\n'+
+'Tételek:\n'+lines+'\n\n'+
+'Részösszeg: '+fmt(b.sub)+'\n'+
+((+b.travelFee>0)?('Kiszállási díj: '+fmt(b.travelFee)+'\n'):'')+
+'Végösszeg: '+fmt(b.total)+'\n'+
+'Foglalási előleg: '+fmt(b.deposit)+'\n'+
+'Helyszínen fizetendő: '+fmt(b.onsite)+'\n\n'+
+'Elérhető napok: '+b.dates.join(', ');
+  const mail='mailto:'+(cfg.settings.notifyEmail||'')+'?subject='+encodeURIComponent('Új foglalás – '+b.customer.name)+'&body='+encodeURIComponent(body);
+  viewEl.innerHTML='<div class="ok"><h2 style="margin:0 0 6px">✅ Köszönjük, '+esc(b.customer.name)+'!</h2>'
+    +'Rögzítettük az igényed. Hamarosan felkeresünk a megadott elérhetőségen, hogy egyeztessünk a pontos időpontról.</div>'
+    +'<p><strong>Becsült végösszeg: </strong><span style="color:var(--brand);font-weight:800;font-size:1.2rem">'+fmt(b.total)+'</span> (előleg: '+fmt(b.deposit)+')</p>'
+    +'<pre class="sum">'+body.replace(/</g,'&lt;')+'</pre>'
+    +((b.photos&&b.photos.length)?'<div class="photos">'+b.photos.map(s=>'<div class="thumb"><img src="'+s+'"></div>').join('')+'</div>':'')
+    +(b.noPhoto?'<div class="nophoto-note">📞 Nincs fotó – telefonon vesszük fel a kapcsolatot a folt pontosításához.</div>':'')
+    +'<div class="nav"><a class="btn btn-primary" href="'+mail+'">✉ Küldés e-mailben</a>'
+    +'<button class="btn btn-ghost" id="copyBtn">⧉ Másolás vágólapra</button></div>'
+    +'<div class="nav" style="margin-top:8px"><button class="btn btn-ghost" id="newBtn">＋ Új foglalás indítása</button></div>';
+  document.getElementById('copyBtn').onclick=()=>{navigator.clipboard.writeText(body).then(()=>alert('Vágólapra másolva!'),()=>alert('Nem sikerült a másolás.'));};
+  document.getElementById('newBtn').onclick=()=>{cart=[];draft=null;dates=new Set();buildStep=1;view='property';property={type:null,floor:'',lift:null};photos=[];noPhoto=false;customer={name:'',phone:'',email:'',zip:'',address:'',note:'',timepref:'Rugalmas'};render();};
+}
+
+render();
+</script>
+</body>
+</html>
