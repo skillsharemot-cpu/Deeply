@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Árajánlat-készítő – Jobbmint</title>
+<title>Árajánlat-készítő – Deeply</title>
 <style>
   /* ====== ALKALMAZÁS (szerkesztő) – nyomtatáskor eltűnik ====== */
   :root{--bg:#eef2f5;--card:#fff;--ink:#1c2b33;--muted:#5b7282;--brand:#0e7c86;--brand2:#3aa6a0;
@@ -102,6 +102,7 @@
     <button class="tb" id="btnSave">💾 Mentés</button>
     <button class="tb" id="btnNew">＋ Új</button>
     <button class="tb" id="btnMail">✉ Kísérőlevél</button>
+    <button class="tb" id="btnData" title="Minden adat mentése egy fájlba, illetve visszatöltése">💾 Adatmentés</button>
     <button class="tb" id="btnHtml">⬇ HTML mentése</button>
     <button class="tb solid" id="btnPrint">🖨️ Nyomtatás / PDF</button>
   </div>
@@ -145,7 +146,7 @@
       </div>
       <div class="g2">
         <div><label class="f">Színséma</label>
-          <select data-f="theme"><option value="teal">Jobbmint (teal)</option><option value="sarga">Sárga (mint a minta)</option><option value="mono">Fekete-fehér (tintakímélő)</option></select></div>
+          <select data-f="theme"><option value="teal">Deeply (teal)</option><option value="sarga">Sárga (mint a minta)</option><option value="mono">Fekete-fehér (tintakímélő)</option></select></div>
         <div><label class="f">Foglalási előleg (0 = nem jelenik meg)</label><input type="number" step="any" data-f="deposit"></div>
       </div>
     </div>
@@ -268,7 +269,7 @@ const PKEY='tc_pricing_v1', BKEY='tc_bookings_v1',
 
 /* ---- tartalék árlista, ha a kalkulátort még sose mentették el ezen a gépen ---- */
 const FALLBACK={
-  settings:{businessName:'Jobbmint',currency:'Ft',minFee:6000,travelFee:6000,deposit:4000,notifyEmail:''},
+  settings:{businessName:'Deeply',currency:'Ft',minFee:6000,travelFee:6000,deposit:4000,notifyEmail:''},
   services:[
     {id:'kanape',name:'Kanapé / ülőgarnitúra',unit:'ülőhely',price:4000,material:true},
     {id:'fotel',name:'Fotel',unit:'db',price:4000,material:true},
@@ -326,10 +327,10 @@ function nextNo(){
   const y=new Date().getFullYear();
   let seq=1;
   try{const s=JSON.parse(localStorage.getItem(SEQKEY)||'{}');if(s.year===y)seq=(+s.n||0)+1;}catch(e){}
-  return 'JBM-'+y+'-'+String(seq).padStart(3,'0');
+  return 'DPL-'+y+'-'+String(seq).padStart(3,'0');
 }
 function bumpNo(no){
-  const m=/^JBM-(\d{4})-(\d+)$/.exec(no||'');
+  const m=/^DPL-(\d{4})-(\d+)$/.exec(no||'');
   if(!m)return;
   try{localStorage.setItem(SEQKEY,JSON.stringify({year:+m[1],n:+m[2]}));}catch(e){}
 }
@@ -340,7 +341,7 @@ function newOffer(){
     docTitle:'Árajánlat',
     subject:'Kárpittisztítás', payment:'Készpénz',
     vatMode:'aam', vatPct:27, rounding:0, theme:'teal', deposit:0,
-    seller:{name:pricing.settings.businessName||'Jobbmint',taxNo:'',phone:'',
+    seller:{name:pricing.settings.businessName||'Deeply',taxNo:'',phone:'',
             email:pricing.settings.notifyEmail||'',web:'',account:'',bankName:''},
     customer:{name:'',city:'',address:'',taxNo:'',phone:'',email:''},
     items:[],
@@ -1010,6 +1011,96 @@ renderFields();
 renderItems();
 renderDiscs();
 renderPhotos();
+
+
+/* ═══════════ TELJES ADATMENTÉS / VISSZATÖLTÉS ═══════════════════════════
+   Minden adat EGY tömör JSON-fájlba: árlista + foglalások + ajánlatok +
+   ajánlat-sorszám. A formátum verziózott ('deeply-backup'), hogy egy későbbi
+   szerver / weboldal is be tudja olvasni – ez a híd a mostani böngésző-
+   tárolóból (localStorage) a jövőbeli adatbázisba.
+
+   • Mentés:     behúzás nélküli JSON = a lehető legkisebb fájl. Ha vannak
+                 fotók az ajánlatokban, felajánlja a fotó nélküli (kisebb) mentést.
+   • Visszatöltés: ÖSSZEFÉSÜL, nem töröl. Ami hiányzik, hozzáadódik; azonos
+                 azonosítónál a frissebb változat nyer. Így több gép adata
+                 egyesíthető.
+
+   FIGYELEM: ez a blokk két fájlban él (arkalkulator_admin.html és
+   arajanlat_keszito.html) – módosításkor mindkettőben át kell vezetni.
+   ════════════════════════════════════════════════════════════════════════ */
+const BK_KEYS={pricing:'tc_pricing_v1',bookings:'tc_bookings_v1',offers:'tc_offers_v1',offerSeq:'tc_offer_seq_v1'};
+function bkRead(k,fb){try{const s=localStorage.getItem(k);return s?JSON.parse(s):fb;}catch(e){return fb;}}
+function bkPhotos(a){return (a||[]).reduce((n,o)=>n+((o&&o.photos&&o.photos.length)||0),0);}
+function bkSize(n){return n<1024?n+' B':n<1048576?Math.round(n/1024)+' kB':(n/1048576).toFixed(1)+' MB';}
+function bkBuild(withPhotos){
+  const of=bkRead(BK_KEYS.offers,[]);
+  return {format:'deeply-backup',version:1,exportedAt:new Date().toISOString(),
+    data:{
+      pricing:bkRead(BK_KEYS.pricing,null),
+      bookings:bkRead(BK_KEYS.bookings,[]),
+      offers:withPhotos?of:of.map(o=>{const c=Object.assign({},o);delete c.photos;return c;}),
+      offerSeq:bkRead(BK_KEYS.offerSeq,null)
+    }};
+}
+function bkExport(){
+  const ph=bkPhotos(bkRead(BK_KEYS.offers,[]));
+  let withPhotos=false;
+  if(ph)withPhotos=!confirm('Az ajánlatokban '+ph+' fotó van – ezek a sokszorosára növelik a fájlt.\n\nOK  = fotók NÉLKÜL (legkisebb fájl)\nMégse = fotókkal együtt');
+  const txt=JSON.stringify(bkBuild(withPhotos));
+  const d=new Date(),p=n=>String(n).padStart(2,'0');
+  const name='deeply_adatok_'+d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+(withPhotos?'_fotokkal':'')+'.json';
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([txt],{type:'application/json'}));
+  a.download=name;a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+  toast('✓ '+name+' ('+bkSize(txt.length)+')');
+}
+function bkMerge(cur,inc,idOf,stampOf){
+  const out=cur.slice(),idx={};let add=0,upd=0;
+  out.forEach((x,i)=>{const k=idOf(x);if(k!=null&&k!=='')idx[k]=i;});
+  (inc||[]).forEach(x=>{
+    const k=idOf(x);
+    if(k==null||k===''||!(k in idx)){out.push(x);if(k!=null&&k!=='')idx[k]=out.length-1;add++;return;}
+    if((stampOf(x)||0)>(stampOf(out[idx[k]])||0)){out[idx[k]]=x;upd++;}
+  });
+  return {list:out,add:add,upd:upd};
+}
+function bkImport(txt){
+  let p;try{p=JSON.parse(txt);}catch(e){alert('Hibás fájl – nem sikerült beolvasni.');return;}
+  const d=p&&p.data;
+  if(!d||p.format!=='deeply-backup'){alert('Ez nem teljes adatmentés.\n\nÍgy csak a „💾 Teljes mentés” gombbal készült fájl tölthető vissza.\n(Az árlista-fájl az „⬆ Árak importja” gombbal megy.)');return;}
+  const rep=[];
+  const b=bkMerge(bkRead(BK_KEYS.bookings,[]),d.bookings,x=>x&&x.created,x=>x&&x.created);
+  localStorage.setItem(BK_KEYS.bookings,JSON.stringify(b.list));
+  rep.push('Foglalások: +'+b.add+' új (összesen '+b.list.length+')');
+  const o=bkMerge(bkRead(BK_KEYS.offers,[]),d.offers,x=>x&&x.no,x=>x&&x.savedAt);
+  localStorage.setItem(BK_KEYS.offers,JSON.stringify(o.list));
+  rep.push('Ajánlatok: +'+o.add+' új, '+o.upd+' frissítve (összesen '+o.list.length+')');
+  const cs=bkRead(BK_KEYS.offerSeq,null),is=d.offerSeq;
+  if(is&&(!cs||(+is.year||0)>(+cs.year||0)||((+is.year||0)===(+cs.year||0)&&(+is.n||0)>(+cs.n||0))))
+    localStorage.setItem(BK_KEYS.offerSeq,JSON.stringify(is));
+  if(d.pricing&&confirm('Az ÁRLISTÁT is vegyem át a mentésből?\n\nOK  = igen, a mentés árai lépnek életbe\nMégse = a mostani árak maradnak'))
+    {localStorage.setItem(BK_KEYS.pricing,JSON.stringify(d.pricing));rep.push('Árlista: felülírva a mentésből');}
+  else rep.push('Árlista: változatlan');
+  alert('✓ Visszatöltve\n\n'+rep.join('\n')+'\n\nAz oldal most újratölt, hogy az adatok megjelenjenek.');
+  location.reload();
+}
+function bkPickFile(){
+  const i=document.createElement('input');
+  i.type='file';i.accept='application/json,.json';
+  i.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>bkImport(r.result);r.readAsText(f);};
+  i.click();
+}
+document.getElementById('btnData').onclick=()=>{
+  const of=bkRead(BK_KEYS.offers,[]),bo=bkRead(BK_KEYS.bookings,[]);
+  openModal('<h3>💾 Adatmentés / visszatöltés</h3>'
+   +'<p style="font-size:.9rem;color:#5b7282;line-height:1.5">Egyetlen JSON-fájlba menti az <b>árlistát, a beérkezett foglalásokat és a mentett ajánlatokat</b> – ez vihető át másik gépre, és ebből tölthető fel majd a jövőbeli szerver is.<br>Most tárolva: <b>'+bo.length+'</b> foglalás, <b>'+of.length+'</b> ajánlat.</p>'
+   +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">'
+   +'<button class="btn btn-primary" onclick="closeModal();bkExport()">💾 Teljes mentés (JSON)</button>'
+   +'<button class="btn btn-ghost" onclick="closeModal();bkPickFile()">📥 Visszatöltés / összefésülés</button>'
+   +'<button class="btn btn-ghost" onclick="closeModal()">Mégse</button></div>'
+   +'<p style="font-size:.8rem;color:#8a9aa5;margin-top:10px">A visszatöltés nem töröl: a hiányzó tételek hozzáadódnak, az azonos sorszámú ajánlatból a frissebb marad.</p>');
+};
 
 // az admin „Árajánlat készítése" gombja itt adja át a foglalást
 (function pickFromAdmin(){

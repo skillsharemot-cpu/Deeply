@@ -55,14 +55,16 @@
   <div class="links">
     <a href="arkalkulator_foglalas.html" target="_blank">↗ Foglalási oldal megnyitása</a>
     <a href="arajanlat_keszito.html" target="_blank">🧾 Árajánlat-készítő</a>
-    <a href="#" id="exportBtn">⬇ Export JSON</a>
-    <a href="#" id="importBtn">⬆ Import JSON</a>
+    <a href="#" id="backupBtn">💾 Teljes mentés</a>
+    <a href="#" id="restoreBtn">📥 Visszatöltés</a>
+    <a href="#" id="exportBtn">⬇ Árak exportja</a>
+    <a href="#" id="importBtn">⬆ Árak importja</a>
     <a href="#" id="resetBtn">↺ Alaphelyzet</a>
   </div>
 </header>
 
 <div class="wrap">
-  <div class="hint">Itt állítod be az <strong>összes árat</strong>. A módosítások a böngészőben tárolódnak (ugyanazon a gépen a foglalási oldal automatikusan ezeket használja). <strong>Más géphez:</strong> Export JSON → a másik gépen Import JSON. Minden módosítás után nyomj <strong>Mentés</strong>-t.</div>
+  <div class="hint">Itt állítod be az <strong>összes árat</strong>. A módosítások a böngészőben tárolódnak (ugyanazon a gépen a foglalási oldal automatikusan ezeket használja). <strong>Más gépre vagy biztonsági mentésnek:</strong> 💾 Teljes mentés → a másik gépen 📥 Visszatöltés (összefésül: a meglévő foglalások és ajánlatok megmaradnak). Minden módosítás után nyomj <strong>Mentés</strong>-t.</div>
 
   <div class="tabs" id="tabs"></div>
 
@@ -146,7 +148,7 @@ const KEY='tc_pricing_v1', BKEY='tc_bookings_v1';
 const CFG_VERSION=2;
 const DEFAULTS={
   cfgVersion:CFG_VERSION,
-  settings:{businessName:'Jobbmint',currency:'Ft',minFee:6000,travelFee:6000,deposit:4000,notifyEmail:'skillsharemot@gmail.com'},
+  settings:{businessName:'Deeply',currency:'Ft',minFee:6000,travelFee:6000,deposit:4000,notifyEmail:'skillsharemot@gmail.com'},
   services:[
     {id:'kanape',name:'Kanapé / ülőgarnitúra',unit:'ülőhely',price:4000,material:true},
     {id:'fotel',name:'Fotel',unit:'db',price:4000,material:true},
@@ -374,6 +376,88 @@ function renderBookings(){
   });
 }
 document.getElementById('clearBookings').onclick=()=>{if(confirm('Tényleg törlöd az összes foglalást?')){localStorage.removeItem(BKEY);renderBookings();}};
+
+
+/* ═══════════ TELJES ADATMENTÉS / VISSZATÖLTÉS ═══════════════════════════
+   Minden adat EGY tömör JSON-fájlba: árlista + foglalások + ajánlatok +
+   ajánlat-sorszám. A formátum verziózott ('deeply-backup'), hogy egy későbbi
+   szerver / weboldal is be tudja olvasni – ez a híd a mostani böngésző-
+   tárolóból (localStorage) a jövőbeli adatbázisba.
+
+   • Mentés:     behúzás nélküli JSON = a lehető legkisebb fájl. Ha vannak
+                 fotók az ajánlatokban, felajánlja a fotó nélküli (kisebb) mentést.
+   • Visszatöltés: ÖSSZEFÉSÜL, nem töröl. Ami hiányzik, hozzáadódik; azonos
+                 azonosítónál a frissebb változat nyer. Így több gép adata
+                 egyesíthető.
+
+   FIGYELEM: ez a blokk két fájlban él (arkalkulator_admin.html és
+   arajanlat_keszito.html) – módosításkor mindkettőben át kell vezetni.
+   ════════════════════════════════════════════════════════════════════════ */
+const BK_KEYS={pricing:'tc_pricing_v1',bookings:'tc_bookings_v1',offers:'tc_offers_v1',offerSeq:'tc_offer_seq_v1'};
+function bkRead(k,fb){try{const s=localStorage.getItem(k);return s?JSON.parse(s):fb;}catch(e){return fb;}}
+function bkPhotos(a){return (a||[]).reduce((n,o)=>n+((o&&o.photos&&o.photos.length)||0),0);}
+function bkSize(n){return n<1024?n+' B':n<1048576?Math.round(n/1024)+' kB':(n/1048576).toFixed(1)+' MB';}
+function bkBuild(withPhotos){
+  const of=bkRead(BK_KEYS.offers,[]);
+  return {format:'deeply-backup',version:1,exportedAt:new Date().toISOString(),
+    data:{
+      pricing:bkRead(BK_KEYS.pricing,null),
+      bookings:bkRead(BK_KEYS.bookings,[]),
+      offers:withPhotos?of:of.map(o=>{const c=Object.assign({},o);delete c.photos;return c;}),
+      offerSeq:bkRead(BK_KEYS.offerSeq,null)
+    }};
+}
+function bkExport(){
+  const ph=bkPhotos(bkRead(BK_KEYS.offers,[]));
+  let withPhotos=false;
+  if(ph)withPhotos=!confirm('Az ajánlatokban '+ph+' fotó van – ezek a sokszorosára növelik a fájlt.\n\nOK  = fotók NÉLKÜL (legkisebb fájl)\nMégse = fotókkal együtt');
+  const txt=JSON.stringify(bkBuild(withPhotos));
+  const d=new Date(),p=n=>String(n).padStart(2,'0');
+  const name='deeply_adatok_'+d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+(withPhotos?'_fotokkal':'')+'.json';
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([txt],{type:'application/json'}));
+  a.download=name;a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+  toast('✓ '+name+' ('+bkSize(txt.length)+')');
+}
+function bkMerge(cur,inc,idOf,stampOf){
+  const out=cur.slice(),idx={};let add=0,upd=0;
+  out.forEach((x,i)=>{const k=idOf(x);if(k!=null&&k!=='')idx[k]=i;});
+  (inc||[]).forEach(x=>{
+    const k=idOf(x);
+    if(k==null||k===''||!(k in idx)){out.push(x);if(k!=null&&k!=='')idx[k]=out.length-1;add++;return;}
+    if((stampOf(x)||0)>(stampOf(out[idx[k]])||0)){out[idx[k]]=x;upd++;}
+  });
+  return {list:out,add:add,upd:upd};
+}
+function bkImport(txt){
+  let p;try{p=JSON.parse(txt);}catch(e){alert('Hibás fájl – nem sikerült beolvasni.');return;}
+  const d=p&&p.data;
+  if(!d||p.format!=='deeply-backup'){alert('Ez nem teljes adatmentés.\n\nÍgy csak a „💾 Teljes mentés” gombbal készült fájl tölthető vissza.\n(Az árlista-fájl az „⬆ Árak importja” gombbal megy.)');return;}
+  const rep=[];
+  const b=bkMerge(bkRead(BK_KEYS.bookings,[]),d.bookings,x=>x&&x.created,x=>x&&x.created);
+  localStorage.setItem(BK_KEYS.bookings,JSON.stringify(b.list));
+  rep.push('Foglalások: +'+b.add+' új (összesen '+b.list.length+')');
+  const o=bkMerge(bkRead(BK_KEYS.offers,[]),d.offers,x=>x&&x.no,x=>x&&x.savedAt);
+  localStorage.setItem(BK_KEYS.offers,JSON.stringify(o.list));
+  rep.push('Ajánlatok: +'+o.add+' új, '+o.upd+' frissítve (összesen '+o.list.length+')');
+  const cs=bkRead(BK_KEYS.offerSeq,null),is=d.offerSeq;
+  if(is&&(!cs||(+is.year||0)>(+cs.year||0)||((+is.year||0)===(+cs.year||0)&&(+is.n||0)>(+cs.n||0))))
+    localStorage.setItem(BK_KEYS.offerSeq,JSON.stringify(is));
+  if(d.pricing&&confirm('Az ÁRLISTÁT is vegyem át a mentésből?\n\nOK  = igen, a mentés árai lépnek életbe\nMégse = a mostani árak maradnak'))
+    {localStorage.setItem(BK_KEYS.pricing,JSON.stringify(d.pricing));rep.push('Árlista: felülírva a mentésből');}
+  else rep.push('Árlista: változatlan');
+  alert('✓ Visszatöltve\n\n'+rep.join('\n')+'\n\nAz oldal most újratölt, hogy az adatok megjelenjenek.');
+  location.reload();
+}
+function bkPickFile(){
+  const i=document.createElement('input');
+  i.type='file';i.accept='application/json,.json';
+  i.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>bkImport(r.result);r.readAsText(f);};
+  i.click();
+}
+document.getElementById('backupBtn').onclick=e=>{e.preventDefault();bkExport();};
+document.getElementById('restoreBtn').onclick=e=>{e.preventDefault();bkPickFile();};
 
 renderAll();
 </script>
