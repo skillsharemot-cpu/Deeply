@@ -496,6 +496,57 @@ function addPhotoFiles(files){
 }
 function esc(s){return (s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
 
+/* ═══════════ FELHŐ – Google Drive / Apps Script ═════════════════════════
+   A foglalások és a mentések a tulajdonos Google Drive-jára kerülnek egy
+   Apps Script webalkalmazáson keresztül. Telepítés: Drive_integracio/TELEPITES.md
+
+   • Amíg a CLOUD.URL üres, MINDEN a régi módon működik (localStorage) –
+     a felhő funkciók egyszerűen alszanak, semmi nem törik el.
+   • A kérés szándékosan 'text/plain' törzzsel megy: így nincs CORS-preflight,
+     amit az Apps Script nem kezel.
+   • WRITE_KEY: nyilvános (a forrásban látszik), csak foglalás beküldésére jó.
+     ADMIN_KEY: soha nem kerül a fájlba – a gépen, localStorage-ban él.
+
+   FIGYELEM: ez a blokk két fájlban él (arkalkulator_foglalas.html és
+   arkalkulator_admin.html) – módosításkor mindkettőben át kell vezetni.
+   ════════════════════════════════════════════════════════════════════════ */
+const CLOUD={
+  URL:'',                          /* ← ide jön a webalkalmazás URL-je (…/exec) */
+  WRITE_KEY:'F9YcCX1EyZ0Mqzpz'
+};
+const CLOUD_KKEY='tc_cloud_admin_key_v1';
+function cloudOn(){return !!CLOUD.URL;}
+function cloudAdminKey(){try{return localStorage.getItem(CLOUD_KKEY)||'';}catch(e){return '';}}
+function cloudSetAdminKey(k){try{localStorage.setItem(CLOUD_KKEY,k||'');}catch(e){}}
+function cloudCall(action,payload,key){
+  if(!cloudOn())return Promise.reject(new Error('A felhő nincs beállítva (hiányzik az URL).'));
+  const body=JSON.stringify(Object.assign({action:action,key:key||CLOUD.WRITE_KEY},payload||{}));
+  return fetch(CLOUD.URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+                          body:body,redirect:'follow'})
+    .then(r=>r.text())
+    .then(t=>{
+      let j;try{j=JSON.parse(t);}catch(e){throw new Error('Váratlan válasz a szervertől – lehet, hogy a telepítés nem "Bárki" hozzáférésű.');}
+      if(!j.ok)throw new Error(j.error||'Ismeretlen hiba.');
+      return j;
+    });
+}
+
+/* ── A foglalás felküldése a Drive-ra (ha be van állítva a felhő) ── */
+function cloudSendBooking(b){
+  const el=()=>document.getElementById('cloudState');
+  if(!cloudOn()){const e0=el();if(e0)e0.remove();return;}
+  const e1=el();if(e1)e1.innerHTML='<span style="color:#5b6d72">⏳ Foglalás elküldése…</span>';
+  cloudCall('booking',{data:b}).then(r=>{
+    const e2=el();
+    if(e2)e2.innerHTML='<span style="color:#1c7c54;font-weight:700">✓ A foglalásod megérkezett hozzánk'
+      +(r.photos?' ('+r.photos+' fotóval)':'')+' – nem kell mást tenned.</span>';
+  }).catch(err=>{
+    const e2=el();
+    if(e2)e2.innerHTML='<span style="color:#c0392b">⚠ A foglalást most nem sikerült elküldeni. '
+      +'Kérlek nyomd meg lent a „✉ Küldés e-mailben" gombot, hogy biztosan megkapjuk.</span>';
+  });
+}
+
 function submit(){
   if(!customer.name||!customer.phone||!customer.zip||!customer.address){alert('Kérlek töltsd ki a csillaggal jelölt mezőket (név, telefon, irányítószám, cím).');return;}
   if(!cart.length){alert('A kosár üres.');return;}
@@ -517,6 +568,7 @@ function submit(){
   }
   window._lastBooking=booking;
   view='done';render();
+  cloudSendBooking(booking);
 }
 
 function renderDone(){
@@ -543,6 +595,7 @@ function renderDone(){
   const mail='mailto:'+(cfg.settings.notifyEmail||'')+'?subject='+encodeURIComponent('Új foglalás – '+b.customer.name)+'&body='+encodeURIComponent(body);
   viewEl.innerHTML='<div class="ok"><h2 style="margin:0 0 6px">✅ Köszönjük, '+esc(b.customer.name)+'!</h2>'
     +'Rögzítettük az igényed. <strong>24 órán belül</strong> jelentkezünk a megadott elérhetőségen, és egyeztetjük a pontos időpontot.</div>'
+    +'<div id="cloudState" style="margin:10px 0 2px"></div>'
     +'<p><strong>Becsült végösszeg: </strong><span style="color:var(--brand);font-weight:800;font-size:1.2rem">'+fmt(b.total)+'</span> (előleg: '+fmt(b.deposit)+')</p>'
     +'<pre class="sum">'+body.replace(/</g,'&lt;')+'</pre>'
     +((b.photos&&b.photos.length)?'<div class="photos">'+b.photos.map(s=>'<div class="thumb"><img src="'+s+'"></div>').join('')+'</div>':'')

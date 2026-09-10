@@ -55,6 +55,7 @@
   <div class="links">
     <a href="arkalkulator_foglalas.html" target="_blank">↗ Foglalási oldal megnyitása</a>
     <a href="arajanlat_keszito.html" target="_blank">🧾 Árajánlat-készítő</a>
+    <a href="#" id="cloudBtn">☁ Felhő</a>
     <a href="#" id="backupBtn">💾 Teljes mentés</a>
     <a href="#" id="restoreBtn">📥 Visszatöltés</a>
     <a href="#" id="exportBtn">⬇ Árak exportja</a>
@@ -456,6 +457,112 @@ function bkPickFile(){
   i.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>bkImport(r.result);r.readAsText(f);};
   i.click();
 }
+/* ═══════════ FELHŐ – Google Drive / Apps Script ═════════════════════════
+   A foglalások és a mentések a tulajdonos Google Drive-jára kerülnek egy
+   Apps Script webalkalmazáson keresztül. Telepítés: Drive_integracio/TELEPITES.md
+
+   • Amíg a CLOUD.URL üres, MINDEN a régi módon működik (localStorage) –
+     a felhő funkciók egyszerűen alszanak, semmi nem törik el.
+   • A kérés szándékosan 'text/plain' törzzsel megy: így nincs CORS-preflight,
+     amit az Apps Script nem kezel.
+   • WRITE_KEY: nyilvános (a forrásban látszik), csak foglalás beküldésére jó.
+     ADMIN_KEY: soha nem kerül a fájlba – a gépen, localStorage-ban él.
+
+   FIGYELEM: ez a blokk két fájlban él (arkalkulator_foglalas.html és
+   arkalkulator_admin.html) – módosításkor mindkettőben át kell vezetni.
+   ════════════════════════════════════════════════════════════════════════ */
+const CLOUD={
+  URL:'',                          /* ← ide jön a webalkalmazás URL-je (…/exec) */
+  WRITE_KEY:'F9YcCX1EyZ0Mqzpz'
+};
+const CLOUD_KKEY='tc_cloud_admin_key_v1';
+function cloudOn(){return !!CLOUD.URL;}
+function cloudAdminKey(){try{return localStorage.getItem(CLOUD_KKEY)||'';}catch(e){return '';}}
+function cloudSetAdminKey(k){try{localStorage.setItem(CLOUD_KKEY,k||'');}catch(e){}}
+function cloudCall(action,payload,key){
+  if(!cloudOn())return Promise.reject(new Error('A felhő nincs beállítva (hiányzik az URL).'));
+  const body=JSON.stringify(Object.assign({action:action,key:key||CLOUD.WRITE_KEY},payload||{}));
+  return fetch(CLOUD.URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+                          body:body,redirect:'follow'})
+    .then(r=>r.text())
+    .then(t=>{
+      let j;try{j=JSON.parse(t);}catch(e){throw new Error('Váratlan válasz a szervertől – lehet, hogy a telepítés nem "Bárki" hozzáférésű.');}
+      if(!j.ok)throw new Error(j.error||'Ismeretlen hiba.');
+      return j;
+    });
+}
+
+/* ── Felhő-panel az adminban (a fejléc „☁ Felhő" linkje nyitja) ── */
+function cloudPanel(){
+  const old=document.getElementById('cloudPanel');
+  if(old){old.remove();return;}
+  const el=document.createElement('div');
+  el.id='cloudPanel';
+  el.style.cssText='position:fixed;right:14px;top:62px;z-index:120;background:#fff;border:1px solid #dbe4e6;'
+    +'border-radius:12px;box-shadow:0 14px 40px rgba(0,0,0,.18);padding:16px 18px;width:min(380px,94vw);'
+    +'font-size:.88rem;line-height:1.5;color:#132227';
+  el.innerHTML=
+     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
+    +'<b style="font-size:1rem">☁ Felhő – Google Drive</b>'
+    +'<span id="cloudClose" style="cursor:pointer;font-size:1.2rem;color:#5b6d72">&times;</span></div>'
+    +(cloudOn()
+      ?'<p style="margin:0 0 10px;color:#5b6d72">A foglalások a Drive-ra és a Google-táblázatba futnak be. '
+        +'Az adatok kiolvasásához a <b>titkos kulcs</b> kell (gépenként egyszer).</p>'
+        +'<input id="cloudKeyIn" type="password" placeholder="Titkos kulcs" value="'+cloudAdminKey().replace(/"/g,'&quot;')+'" '
+        +'style="width:100%;padding:9px 10px;border:1px solid #dbe4e6;border-radius:8px;margin-bottom:10px">'
+        +'<div style="display:flex;flex-wrap:wrap;gap:7px">'
+        +'<button class="btn" id="cloudTest" style="background:#0e7c86;color:#fff;border:none;border-radius:8px;padding:8px 12px;cursor:pointer;font-weight:600">Kapcsolat tesztelése</button>'
+        +'<button class="btn" id="cloudPull" style="background:#fff;border:1px solid #dbe4e6;border-radius:8px;padding:8px 12px;cursor:pointer;font-weight:600">📥 Foglalások letöltése</button>'
+        +'<button class="btn" id="cloudPush" style="background:#fff;border:1px solid #dbe4e6;border-radius:8px;padding:8px 12px;cursor:pointer;font-weight:600">☁ Mentés a Drive-ra</button>'
+        +'<button class="btn" id="cloudRestore" style="background:#fff;border:1px solid #dbe4e6;border-radius:8px;padding:8px 12px;cursor:pointer;font-weight:600">📤 Visszatöltés a Drive-ról</button>'
+        +'</div>'
+      :'<p style="margin:0 0 8px;color:#5b6d72">A felhő <b>még nincs beállítva</b>. Amíg nincs, minden a böngésző '
+        +'tárolójában marad, és a foglalás csak akkor jut el hozzád, ha a vevő elküldi e-mailben.</p>'
+        +'<p style="margin:0;color:#5b6d72">Beállítás: <code style="background:#f4f7f7;padding:1px 5px;border-radius:4px">Drive_integracio/TELEPITES.md</code> '
+        +'– kb. 10 perc, utána ide kerül a webalkalmazás URL-je.</p>')
+    +'<div id="cloudMsg" style="margin-top:11px;min-height:1.2em;color:#5b6d72"></div>';
+  document.body.appendChild(el);
+  document.getElementById('cloudClose').onclick=()=>el.remove();
+  if(!cloudOn())return;
+
+  const msg=(t,color)=>{const m=document.getElementById('cloudMsg');m.textContent=t;m.style.color=color||'#5b6d72';};
+  const key=()=>{const k=document.getElementById('cloudKeyIn').value.trim();cloudSetAdminKey(k);return k;};
+
+  document.getElementById('cloudTest').onclick=()=>{
+    msg('Kapcsolódás…');
+    cloudCall('list',{},key())
+      .then(r=>msg('✓ Működik. A Drive-on '+r.bookings.length+' foglalás van.','#1c7c54'))
+      .catch(e=>msg('✗ '+e.message,'#c0392b'));
+  };
+
+  document.getElementById('cloudPull').onclick=()=>{
+    msg('Foglalások letöltése…');
+    cloudCall('list',{},key()).then(r=>{
+      const cur=bkRead(BK_KEYS.bookings,[]);
+      const m=bkMerge(cur,r.bookings,x=>x&&x.created,x=>x&&x.created);
+      localStorage.setItem(BK_KEYS.bookings,JSON.stringify(m.list));
+      renderBookings();
+      msg('✓ '+m.add+' új foglalás jött le (összesen '+m.list.length+').','#1c7c54');
+    }).catch(e=>msg('✗ '+e.message,'#c0392b'));
+  };
+
+  document.getElementById('cloudPush').onclick=()=>{
+    msg('Mentés a Drive-ra…');
+    cloudCall('backup',{data:bkBuild(false)},key())
+      .then(r=>msg('✓ Felment: '+r.file,'#1c7c54'))
+      .catch(e=>msg('✗ '+e.message,'#c0392b'));
+  };
+
+  document.getElementById('cloudRestore').onclick=()=>{
+    if(!confirm('A Drive-on lévő legutóbbi mentést töltöm vissza.\n\nA meglévő adatok megmaradnak – az összefésülés csak hozzáad.'))return;
+    msg('Letöltés…');
+    cloudCall('restore',{},key())
+      .then(r=>{msg('✓ '+r.file+' – visszatöltés…','#1c7c54');bkImport(JSON.stringify(r.data));})
+      .catch(e=>msg('✗ '+e.message,'#c0392b'));
+  };
+}
+document.getElementById('cloudBtn').onclick=e=>{e.preventDefault();cloudPanel();};
+
 document.getElementById('backupBtn').onclick=e=>{e.preventDefault();bkExport();};
 document.getElementById('restoreBtn').onclick=e=>{e.preventDefault();bkPickFile();};
 
