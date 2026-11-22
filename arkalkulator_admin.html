@@ -340,6 +340,19 @@ function propLabel(p){
   if(p.type==='emeletes')s+=' – '+(p.floor||'?')+'. emelet, '+(p.lift===true?'van lift':p.lift===false?'NINCS lift':'lift?');
   return s;
 }
+// honnan jött a vevő (a foglalási oldal ?src=… paramétere); régi foglalásnál nincs
+// a foglalási oldal jogi nyilatkozata (2026-11-től): ÁSZF-elfogadás + 14 napon belüli kezdés kérése
+function legalLabel(l){
+  if(!l||!l.aszf)return '— (régi foglalás, ÁSZF-pipa még nem volt)';
+  let s='ÁSZF ('+String(l.aszfVer||'').replace(/[<>&"]/g,'')+') elfogadva';
+  if(l.earlyStart)s+=' · <strong>14 napon belüli kezdést kért</strong>: '+(l.earlyDates||[]).join(', ').replace(/[<>&"]/g,'');
+  return s;
+}
+function srcLabel(s){
+  if(!s)return '—';
+  const names={tabla:'QR-tábla',web:'Weboldal',kozvetlen:'Közvetlen link'};
+  return names[s]||String(s).replace(/[<>&"]/g,'');
+}
 function renderBookings(){
   const list=document.getElementById('bookingsList');
   let bks=[];try{bks=JSON.parse(localStorage.getItem(BKEY)||'[]');}catch(e){}
@@ -356,6 +369,8 @@ function renderBookings(){
       +'<div class="meta">📞 '+(b.customer?.phone||'—')+' · ✉ '+(b.customer?.email||'—')
       +'<br>📍 '+(b.customer?.zip||'')+' '+(b.customer?.address||'—')
       +'<br>🏠 Ingatlan: '+propLabel(b.property)
+      +'<br>🔗 Forrás: '+srcLabel(b.src)
+      +'<br>📄 Nyilatkozat: '+legalLabel(b.legal)
       +'<br>🕐 Idősáv: '+(b.customer?.timepref||'—')+(b.customer?.note?'<br>📝 '+b.customer.note:'')+'</div>'
       +photosHtml
       +'<ul>'+items+'</ul>'

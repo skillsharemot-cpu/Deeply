@@ -5,84 +5,143 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Online foglalás – Deeply Kárpit és Szőnyeg tisztítás</title>
 <style>
-  :root{--bg:#f4f7f9;--card:#fff;--ink:#1c2b33;--muted:#5b7282;--brand:#0e7c86;--brand2:#3aa6a0;
-    --accent:#e8f5f4;--line:#dde7ec;--ok:#157347;--okbg:#e9f7ef;--sel:#0e7c86;--warn:#b35900;--warnbg:#fff4e6;}
+  /* Deeply – a honlappal (deeplykarpit.hu) egyező kinézet: Pantone-paletta, Libertinus Sans + Inter.
+     A betűk és a szókép relatív úton jönnek (fonts/, assets/) – ugyanaz a szerkezet, mint a Honlap/ mappáé.
+     Google Fonts-ot szándékosan nem töltünk be (az adatkezelési tájékoztató ezt állítja).
+     Ha a betűfájl hiányzik, a tartalék betű jelenik meg – semmi nem törik el. */
+  @font-face{font-family:"Inter";src:url("fonts/Inter-Regular.woff2") format("woff2");font-weight:400;font-display:swap}
+  @font-face{font-family:"Inter";src:url("fonts/Inter-SemiBold.woff2") format("woff2");font-weight:600;font-display:swap}
+  @font-face{font-family:"Libertinus Sans";src:url("fonts/LibertinusSans-Regular.woff2") format("woff2");font-weight:400;font-display:swap}
+  @font-face{font-family:"Libertinus Sans";src:url("fonts/LibertinusSans-Bold.woff2") format("woff2");font-weight:700;font-display:swap}
+  :root{--bg:#FAF8F3;--card:#fff;--ink:#1F271C;--muted:#4E5948;--brand:#2D3C29;--brand2:#7E8772;
+    --accent:#F0EDE5;--fog:#D6CBB9;--wt:#A0907F;--line:#DDD5C6;--ok:#3E6B3A;--okbg:#EEF3E9;--sel:#2D3C29;
+    --warn:#8A5A1F;--warnbg:#F7EFE2;--err:#A63A1E;
+    --grad:linear-gradient(90deg,#34462F,#25321F);
+    --sh1:0 1px 4px rgba(45,60,41,.08),0 0 1px rgba(45,60,41,.25);
+    --f-head:"Libertinus Sans",Georgia,serif;
+    --f-body:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;}
   *{box-sizing:border-box}
-  body{margin:0;font-family:"Segoe UI",system-ui,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.55}
-  header{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;padding:28px 20px;text-align:center}
-  header h1{margin:0 0 4px;font-size:1.5rem}
-  header p{margin:0;opacity:.95;font-size:.95rem}
-  .layout{max-width:1060px;margin:18px auto;padding:0 16px;display:grid;grid-template-columns:1fr 320px;gap:18px;align-items:start}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;font:400 16px/1.6 var(--f-body);background:var(--bg);color:var(--ink)}
+  a{color:var(--brand);text-underline-offset:3px}
+  /* fejléc – mint a főoldalon */
+  header.fx{position:sticky;top:0;z-index:20;background:var(--grad);color:var(--accent)}
+  header.fx .wrap{max-width:1092px;margin:0 auto;padding:0 21px;height:64px;display:flex;align-items:center;gap:16px}
+  header.fx .logo{display:block;line-height:0;color:var(--accent);text-decoration:none}
+  header.fx .logo img{width:118px;height:auto}
+  header.fx .logo .wm{font:700 26px/1 var(--f-head);letter-spacing:.14em}
+  header.fx nav{margin-left:auto;display:flex;align-items:center;gap:18px;font:600 14px/1.2 var(--f-body)}
+  header.fx nav a{color:var(--accent);text-decoration:none;white-space:nowrap}
+  header.fx nav a:hover{text-decoration:underline}
+  .hero{max-width:1092px;margin:0 auto;padding:34px 21px 8px}
+  .eyebrow{display:block;text-transform:uppercase;letter-spacing:.12em;font:600 12px/1.2 var(--f-body);color:var(--brand2);margin:0 0 8px}
+  .hero h1{font:700 40px/1.1 var(--f-head);letter-spacing:-.02em;color:var(--brand);margin:0 0 8px}
+  .hero p{margin:0;color:var(--muted);max-width:620px}
+  .layout{max-width:1092px;margin:21px auto 34px;padding:0 21px;display:grid;grid-template-columns:1fr 330px;gap:21px;align-items:start}
   @media(max-width:860px){.layout{grid-template-columns:1fr}}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px;box-shadow:0 2px 10px rgba(0,0,0,.05)}
-  .steps{display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap}
-  .steps .s{flex:1;min-width:70px;text-align:center;font-size:.78rem;color:var(--muted);padding:8px 4px;border-radius:8px;background:#f0f4f6;font-weight:600}
-  .steps .s.active{background:var(--brand);color:#fff}
-  .steps .s.done{background:var(--accent);color:var(--brand)}
-  h2.q{margin:0 0 14px;font-size:1.25rem;color:var(--ink)}
-  .opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
-  .opt{border:2px solid var(--line);border-radius:12px;padding:14px;cursor:pointer;text-align:center;transition:.15s;background:#fff;font-weight:600}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:21px;box-shadow:var(--sh1)}
+  .summary{background:var(--accent);border-color:var(--fog);box-shadow:none}
+  @media(min-width:861px){.summary{position:sticky;top:85px}}
+  .steps{display:flex;gap:6px;margin-bottom:21px;flex-wrap:wrap}
+  .steps .s{flex:1;min-width:70px;text-align:center;font-size:.78rem;color:var(--muted);padding:8px 4px;border-radius:999px;background:var(--accent);font-weight:600}
+  .steps .s.active{background:var(--brand);color:var(--accent)}
+  .steps .s.done{background:var(--fog);color:var(--brand)}
+  h2.q{margin:0 0 13px;font:700 26px/1.2 var(--f-head);color:var(--brand)}
+  .opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+  .opt{border:1.5px solid var(--line);border-radius:12px;padding:13px;cursor:pointer;text-align:center;transition:.15s;background:#fff;font-weight:600}
   .opt:hover{border-color:var(--brand2)}
-  .opt.sel{border-color:var(--sel);background:var(--accent)}
+  .opt.sel{border-color:var(--sel);background:var(--accent);box-shadow:inset 0 0 0 1px var(--sel)}
   .opt .sub{display:block;font-weight:400;font-size:.8rem;color:var(--muted);margin-top:4px}
   .chips{display:flex;flex-wrap:wrap;gap:8px}
-  .chip{border:2px solid var(--line);border-radius:30px;padding:8px 14px;cursor:pointer;font-size:.9rem;font-weight:600;background:#fff;transition:.15s}
+  .chip{border:1.5px solid var(--line);border-radius:999px;padding:8px 14px;cursor:pointer;font-size:.9rem;font-weight:600;background:#fff;transition:.15s}
   .chip:hover{border-color:var(--brand2)}
-  .chip.sel{border-color:var(--sel);background:var(--brand);color:#fff}
-  .qtybox{display:flex;align-items:center;gap:12px;margin:14px 0}
-  .qtybox button{width:42px;height:42px;border:1px solid var(--line);background:#fff;border-radius:10px;font-size:1.4rem;cursor:pointer;font-weight:700;color:var(--brand)}
-  .qtybox input{width:80px;text-align:center;font-size:1.2rem;border:1px solid var(--line);border-radius:10px;padding:8px}
-  .nav{display:flex;justify-content:space-between;margin-top:20px;gap:10px}
-  .btn{border:none;border-radius:10px;padding:12px 20px;cursor:pointer;font-weight:700;font-size:.95rem}
-  .btn-primary{background:var(--brand);color:#fff}
-  .btn-primary:disabled{background:#9bb8bb;cursor:not-allowed}
-  .btn-ghost{background:#fff;border:1px solid var(--line);color:var(--ink)}
-  .btn-add{background:var(--accent);color:var(--brand)}
-  .summary h3{margin:0 0 10px;color:var(--brand);font-size:1.05rem}
-  .cartline{display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px dashed var(--line);font-size:.9rem}
+  .chip.sel{border-color:var(--sel);background:var(--brand);color:var(--accent)}
+  .qtybox{display:flex;align-items:center;gap:12px;margin:13px 0}
+  .qtybox button{width:44px;height:44px;border:1.5px solid var(--line);background:#fff;border-radius:8px;font-size:1.4rem;cursor:pointer;font-weight:700;color:var(--brand)}
+  .qtybox input{width:84px;text-align:center;font-size:1.2rem;border:1.5px solid var(--line);border-radius:8px;padding:8px;font-family:inherit}
+  .nav{display:flex;justify-content:space-between;margin-top:21px;gap:10px;flex-wrap:wrap}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:2px solid transparent;border-radius:8px;padding:12px 22px;min-height:48px;cursor:pointer;font:600 .95rem/1.2 var(--f-body);text-decoration:none}
+  .btn-primary{background:var(--brand);color:var(--accent)}
+  .btn-primary:hover{background:#25321F}
+  .btn-primary:disabled{background:#B9B9A9;color:#fff;cursor:not-allowed}
+  .btn-ghost{background:transparent;border-color:var(--brand);color:var(--brand)}
+  .btn-add{background:var(--fog);color:var(--brand)}
+  .summary h3{margin:0 0 10px;color:var(--brand);font:700 21px/1.2 var(--f-head)}
+  .cartline{display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px dashed var(--fog);font-size:.9rem}
   .cartline small{color:var(--muted);display:block}
-  .cartline .del{color:#c0392b;cursor:pointer;font-weight:700}
-  .totrow{display:flex;justify-content:space-between;margin-top:8px;font-size:.92rem}
-  .totrow.big{font-size:1.15rem;font-weight:800;color:var(--brand);border-top:2px solid var(--accent);padding-top:8px;margin-top:8px}
+  .cartline .del{color:var(--err);cursor:pointer;font-weight:700}
+  .totrow{display:flex;justify-content:space-between;gap:10px;margin-top:8px;font-size:.92rem}
+  .totrow small{display:block;color:var(--muted);font-size:.78rem;font-weight:400}
+  .totrow.big{font-size:1.15rem;font-weight:700;color:var(--brand);border-top:2px solid var(--fog);padding-top:8px;margin-top:8px}
+  .totrow.pay{font-weight:600}
   .empty{color:var(--muted);font-size:.9rem;text-align:center;padding:20px 0}
-  .field{margin:12px 0}.field label{display:block;font-weight:600;margin-bottom:4px;font-size:.9rem}
-  .field input,.field textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:10px;font-size:.95rem;font-family:inherit}
-  .field .req{color:#c0392b}
+  .field{margin:13px 0}.field>label{display:block;font-weight:600;margin-bottom:4px;font-size:.9rem}
+  .field input,.field textarea{width:100%;border:1.5px solid var(--line);border-radius:8px;padding:10px;font-size:1rem;font-family:inherit;background:#fff;color:var(--ink)}
+  .field input:focus,.field textarea:focus{outline:2px solid var(--brand2);outline-offset:1px;border-color:var(--brand2)}
+  .field .req{color:var(--err)}
   .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:8px}
-  .cal .dow{text-align:center;font-size:.72rem;color:var(--muted);font-weight:700;padding:4px 0}
+  .cal .dow{text-align:center;font-size:.72rem;color:var(--muted);font-weight:600;padding:4px 0}
   .cal .day{aspect-ratio:1;border:1px solid var(--line);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.85rem;background:#fff}
   .cal .day.empty{border:none;background:transparent;cursor:default}
-  .cal .day.past{color:#c3ccd1;background:#f6f8f9;cursor:not-allowed}
-  .cal .day.sel{background:var(--brand);color:#fff;border-color:var(--brand);font-weight:700}
+  .cal .day.past{color:#C4C0B5;background:var(--bg);cursor:not-allowed}
+  .cal .day.sel{background:var(--brand);color:var(--accent);border-color:var(--brand);font-weight:700}
   .calhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
-  .calhead button{background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer;font-weight:700}
-  .risk{background:var(--warnbg);border-left:4px solid var(--warn);padding:8px 12px;border-radius:6px;font-size:.85rem;color:#5a3000;margin-top:10px}
+  .calhead button{background:#fff;border:1.5px solid var(--line);border-radius:8px;padding:6px 14px;cursor:pointer;font-weight:700;color:var(--brand)}
+  .risk{background:var(--warnbg);border-left:4px solid var(--warn);padding:8px 12px;border-radius:6px;font-size:.88rem;color:#4A3210;margin-top:10px}
   .ok{background:var(--okbg);border-left:4px solid var(--ok);padding:14px 16px;border-radius:8px;margin:10px 0}
-  .selnote{font-size:.82rem;color:var(--muted);margin-top:6px}
+  .ok h2{font:700 26px/1.2 var(--f-head);color:var(--brand)}
+  .selnote{font-size:.82rem;color:var(--muted);margin-top:8px}
   .timepref{display:flex;gap:8px;flex-wrap:wrap}
-  .timepref label{border:2px solid var(--line);border-radius:10px;padding:8px 14px;cursor:pointer;font-weight:600}
+  .timepref label{border:1.5px solid var(--line);border-radius:999px;padding:8px 16px;cursor:pointer;font-weight:600;background:#fff}
   .timepref input{display:none}
-  .timepref input:checked + span{}
-  .timepref label:has(input:checked){border-color:var(--sel);background:var(--accent)}
-  pre.sum{background:#f6f8f9;border:1px solid var(--line);border-radius:8px;padding:12px;white-space:pre-wrap;font-size:.85rem}
-  footer{text-align:center;color:var(--muted);font-size:.8rem;padding:18px}
-  footer a{color:var(--muted)}
+  .timepref label:has(input:checked){border-color:var(--sel);background:var(--brand);color:var(--accent)}
+  pre.sum{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px;white-space:pre-wrap;font:.85rem/1.55 var(--f-body)}
   .photos{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
   .thumb{position:relative;width:78px;height:78px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
   .thumb img{width:100%;height:100%;object-fit:cover}
-  .thumb .rm{position:absolute;top:2px;right:2px;background:rgba(0,0,0,.6);color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.8rem}
-  .uploadbtn{display:inline-block;border:2px dashed var(--brand2);color:var(--brand);border-radius:10px;padding:10px 16px;cursor:pointer;font-weight:600;font-size:.9rem}
+  .thumb .rm{position:absolute;top:2px;right:2px;background:rgba(31,39,28,.7);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.8rem}
+  .uploadbtn{display:inline-block;border:1.5px dashed var(--brand2);color:var(--brand);border-radius:8px;padding:10px 16px;cursor:pointer;font-weight:600;font-size:.9rem;background:#fff}
   .uploadbtn:hover{background:var(--accent)}
-  .nophoto{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:.9rem;cursor:pointer;background:#f6f8f9;border:1px solid var(--line);border-radius:8px;padding:10px 12px}
-  .nophoto input{width:auto}
-  .nophoto-note{background:var(--warnbg);border-left:4px solid var(--warn);padding:8px 12px;border-radius:6px;font-size:.85rem;color:#5a3000;margin-top:8px}
+  .check{display:flex;align-items:flex-start;gap:10px;margin-top:12px;font-size:.9rem;cursor:pointer;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;line-height:1.5}
+  .check input{width:18px;height:18px;flex:0 0 auto;margin:2px 0 0;accent-color:var(--brand)}
+  .check.need{border-color:var(--warn);background:var(--warnbg)}
+  .nophoto-note{background:var(--warnbg);border-left:4px solid var(--warn);padding:8px 12px;border-radius:6px;font-size:.85rem;color:#4A3210;margin-top:8px}
+  .legal{margin-top:21px;padding-top:13px;border-top:1px solid var(--line)}
+  .legal h3{margin:0 0 4px;font:700 19px/1.2 var(--f-head);color:var(--brand)}
+  /* lábléc – mint a főoldalon */
+  footer.fo{background:var(--brand);color:var(--accent);font-size:14px;margin-top:21px}
+  footer.fo .wrap{max-width:1092px;margin:0 auto;padding:34px 21px;display:flex;gap:13px 34px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+  footer.fo a{color:var(--accent)}
+  footer.fo .lk{display:flex;gap:8px 21px;flex-wrap:wrap}
+  footer.fo .adm{opacity:.55}
+  @media(max-width:640px){
+    .hero{padding-top:21px}
+    .hero h1{font-size:30px}
+    h2.q{font-size:22px}
+    header.fx .wrap{height:56px}
+    header.fx .logo img{width:96px}
+    .card{padding:16px}
+    .nav .btn{flex:1 1 auto}
+    .steps{gap:4px;flex-wrap:nowrap}
+    header.fx nav a:first-child{display:none} /* a szókép is a főoldalra visz – így 320 px-en is kifér a telefonszám */
+    .steps .s{flex:1 1 auto;min-width:0;padding:7px 5px;font-size:.66rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  }
 </style>
 </head>
 <body>
-<header>
-  <h1 id="bizName">✨ Online tisztítás-foglalás</h1>
-  <p>Pár kattintással kiszámoljuk az árat, és felkeresünk az általad megadott időpontban.</p>
-</header>
+<header class="fx"><div class="wrap">
+  <a class="logo" href="https://deeplykarpit.hu/" aria-label="Deeply főoldal"><img src="assets/wordmark-vilagos.svg" alt="Deeply" onerror="this.outerHTML='<span class=&quot;wm&quot;>DEEPLY</span>'"></a>
+  <nav>
+    <a href="https://deeplykarpit.hu/">Főoldal</a>
+    <a href="tel:+36306511580">+36 30 651 1580</a>
+  </nav>
+</div></header>
+
+<section class="hero">
+  <span class="eyebrow">Online foglalás</span>
+  <h1 id="bizName">Árkalkuláció és időpontkérés</h1>
+  <p>Pár kattintással kiszámoljuk az árat, te pedig megadod, mely napokon érünk oda. 24 órán belül visszahívunk egyeztetni.</p>
+</section>
 
 <div class="layout">
   <!-- MAIN -->
@@ -99,19 +158,37 @@
 
   <!-- SUMMARY -->
   <div class="card summary" id="summaryCard">
-    <h3>🧾 Kosár / kalkuláció</h3>
+    <h3>Kalkuláció</h3>
     <div id="cartBox"></div>
     <div id="totals"></div>
-    <div class="selnote">Az árak tájékoztató jellegűek; helyszíni felmérés módosíthatja.</div>
+    <div class="selnote">Az ár tájékoztató jellegű: a végleges árat a helyszíni felmérés után, a munka megkezdése előtt rögzítjük.</div>
   </div>
 </div>
 
-<footer>
-  <span id="bizFoot"></span> · <a href="arkalkulator_admin.html">Admin</a>
-</footer>
+<!-- A jogi oldalak a honlapon élnek (deeplykarpit.hu) – a kalkulátor GitHub Pages-en is fut, ezért abszolút link. -->
+<footer class="fo"><div class="wrap">
+  <span><strong id="bizFoot">Deeply</strong> · Kárpit és szőnyegtisztítás</span>
+  <span class="lk">
+    <a href="tel:+36306511580">+36 30 651 1580</a>
+    <a href="tel:+36708020358">+36 70 802 0358</a>
+  </span>
+  <span class="lk">
+    <a href="https://deeplykarpit.hu/aszf.html" target="_blank" rel="noopener">ÁSZF</a>
+    <a href="https://deeplykarpit.hu/adatkezelesi-tajekoztato.html" target="_blank" rel="noopener">Adatkezelés</a>
+    <a class="adm" href="arkalkulator_admin.html">Admin</a>
+  </span>
+</div></footer>
 
 <script>
 const KEY='tc_pricing_v1', BKEY='tc_bookings_v1';
+/* Honnan jött a vevő? A ?src=… paraméter (QR-tábla: tabla, weboldal: web) a foglalással együtt
+   mentődik, és a Google-táblázat „Forrás" oszlopába kerül. Csak rövid betű/szám/kötőjel érték
+   megy át; hiányzó vagy furcsa érték → "kozvetlen". */
+const SRC=(function(){
+  let s='';try{s=new URLSearchParams(location.search).get('src')||'';}catch(e){}
+  s=s.trim().toLowerCase();
+  return /^[a-z0-9-]{1,24}$/.test(s)?s:'kozvetlen';
+})();
 const CFG_VERSION=2;
 const DEFAULTS={
   cfgVersion:CFG_VERSION,
@@ -164,8 +241,11 @@ const cfg=load();
 const CUR=cfg.settings.currency||'Ft';
 // minden ezrest tagol (a hu-HU locale a négyjegyűeket nem tagolná), nem törhető szóközzel
 function fmt(n){return String(Math.round(+n||0)).replace(/\B(?=(\d{3})+(?!\d))/g,' ')+' '+CUR;}
-document.getElementById('bizName').textContent='✨ '+(cfg.settings.businessName||'Online')+' – tisztítás-foglalás';
-document.getElementById('bizFoot').textContent=cfg.settings.businessName||'';
+document.getElementById('bizFoot').textContent=cfg.settings.businessName||'Deeply';
+// A jogi oldalak címe (a honlapon). Ha a kalkulátor egyszer a honlap mellé költözik, relatívra is állítható.
+const LEGAL={aszf:'https://deeplykarpit.hu/aszf.html',adat:'https://deeplykarpit.hu/adatkezelesi-tajekoztato.html'};
+const ASZF_VER='2026-11';            // melyik ÁSZF-változatot fogadta el a vevő (a foglalásba mentődik)
+const WITHDRAW_DAYS=14;              // fogyasztói elállási idő (45/2014. Korm. rendelet)
 
 // STATE
 let view='property', buildStep=1;
@@ -177,6 +257,14 @@ let calRef=new Date(); calRef.setDate(1);
 let customer={name:'',phone:'',email:'',zip:'',address:'',note:'',timepref:'Rugalmas'};
 let photos=[];      // array of base64 data URLs
 let noPhoto=false;  // "jelenleg nem tudok képet csinálni"
+let consent={aszf:false,early:false}; // ÁSZF + adatkezelés elfogadva; 14 napon belüli kezdés kifejezett kérése
+
+/* Ha a vevő a 14 napos elállási időn belüli napot is bejelölt, a munka csak a kifejezett kérésére
+   kezdődhet meg (45/2014. Korm. rendelet; ÁSZF 10.2). Ilyenkor a kérés pipája kötelező. */
+function earlyDates(){
+  const lim=new Date();lim.setHours(0,0,0,0);lim.setDate(lim.getDate()+WITHDRAW_DAYS);
+  return [...dates].filter(iso=>{const p=iso.split('-');return new Date(+p[0],+p[1]-1,+p[2])<lim;}).sort();
+}
 
 const viewEl=document.getElementById('view');
 
@@ -237,9 +325,11 @@ function renderSummary(){
   h+='<div class="totrow"><span>Részösszeg</span><span>'+fmt(o.sub)+'</span></div>';
   if(o.minFeeHit)h+='<div class="totrow"><span>Minimum rendelési érték</span><span>'+fmt(o.svc)+'</span></div>';
   if(o.travelFee>0)h+='<div class="totrow"><span>Kiszállási díj</span><span>'+fmt(o.travelFee)+'</span></div>';
-  h+='<div class="totrow big"><span>Végösszeg</span><span>'+fmt(o.applied)+'</span></div>';
-  h+='<div class="totrow"><span>Foglalási előleg</span><span>'+fmt(o.deposit)+'</span></div>';
-  h+='<div class="totrow"><span>Helyszínen fizetendő</span><span>'+fmt(o.onsite)+'</span></div>';
+  h+='<div class="totrow big"><span>Becsült végösszeg</span><span>'+fmt(o.applied)+'</span></div>';
+  if(o.deposit>0){
+    h+='<div class="totrow"><span>Foglalási előleg<small>átutalással, a visszaigazolás után – a végösszegből levonjuk</small></span><span>'+fmt(o.deposit)+'</span></div>';
+    h+='<div class="totrow pay"><span>Helyszínen fizetendő<small>a munka után</small></span><span>'+fmt(o.onsite)+'</span></div>';
+  }
   document.getElementById('totals').innerHTML=h;
   box.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{cart.splice(+b.dataset.rm,1);renderSummary();if(view==='build')render();});
 }
@@ -319,7 +409,7 @@ function updateLiftNote(){
   const el=document.getElementById('liftNote');if(!el)return;
   const fl=parseInt(property.floor,10)||0;
   if(property.lift===false&&fl>=2){
-    el.innerHTML='<div class="risk">⚠️ Lift nélkül a '+fl+'. emeletre nagyobb/nehéz bútorok (kanapé, matrac) felhordása nehézkes lehet – ezt a felmérésnél figyelembe vesszük.</div>';
+    el.innerHTML='<div class="risk">Lift nélkül a '+fl+'. emeletre nagyobb/nehéz bútorok (kanapé, matrac) felhordása nehézkes lehet – ezt a felmérésnél figyelembe vesszük.</div>';
   }else el.innerHTML='';
 }
 
@@ -364,7 +454,7 @@ function renderBuild(){
         mm.appendChild(d);
       });
       const rb=document.getElementById('riskBox');const cm=draft.materialId?mat(draft.materialId):null;
-      if(cm&&cm.risk)rb.innerHTML='<div class="risk">⚠️ '+cm.name+': '+cm.risk+'</div>';
+      if(cm&&cm.risk)rb.innerHTML='<div class="risk">'+cm.name+': '+cm.risk+'</div>';
     }
     // qty had a stray button tag fix
     document.getElementById('back').onclick=()=>{buildStep=1;render();};
@@ -374,7 +464,7 @@ function renderBuild(){
   if(buildStep===3){
     let h='<h2 class="q">Van folt vagy szag? (több is választható)</h2><div class="chips" id="stains"></div>';
     h+='<p style="font-weight:600;margin:16px 0 6px">Kiegészítők</p><div class="chips" id="addons"></div>';
-    h+='<div class="risk">💡 A mélytisztítás előtt ajánlott a felületet átporszívózni. Ha inkább ránk bíznád, add hozzá a „Porszívózás” kiegészítőt – mi elvégezzük a tisztítás elején.</div>';
+    h+='<div class="risk">Tipp: a mélytisztítás előtt ajánlott a felületet átporszívózni. Ha inkább ránk bíznád, add hozzá a „Porszívózás” kiegészítőt – mi elvégezzük a tisztítás elején.</div>';
     h+='<div class="nav"><button class="btn btn-ghost" id="back">← Vissza</button><button class="btn btn-add" id="addItem">＋ Tétel hozzáadása a kosárhoz</button></div>';
     viewEl.innerHTML=h;
     const sc=document.getElementById('stains');
@@ -451,24 +541,43 @@ function renderForm(){
   h+='<div class="field"><label>Megjegyzés (pl. parkolás, lift, kisállat)</label><textarea id="f_note" rows="3">'+esc(customer.note)+'</textarea></div>';
   h+='<div class="field"><label>Fotó a foltról / tisztítandó felületről</label>'
     +'<div class="photos" id="photoList"></div>'
-    +'<label class="uploadbtn" for="f_photo">📷 Fotó hozzáadása</label>'
+    +'<label class="uploadbtn" for="f_photo">+ Fotó hozzáadása</label>'
     +'<input type="file" id="f_photo" accept="image/*" multiple style="display:none">'
-    +'<label class="nophoto"><input type="checkbox" id="f_nophoto" '+(noPhoto?'checked':'')+'><span>Jelenleg nem tudok róla képet csinálni</span></label>'
+    +'<label class="check"><input type="checkbox" id="f_nophoto" '+(noPhoto?'checked':'')+'><span>Jelenleg nem tudok róla képet csinálni</span></label>'
     +'<div id="nophotoNote"></div></div>';
-  h+='<div class="nav"><button class="btn btn-ghost" id="back">← Vissza a naptárhoz</button><button class="btn btn-primary" id="submit">Foglalás elküldése ✓</button></div>';
+  // jogi nyilatkozatok
+  const early=earlyDates();
+  if(!early.length)consent.early=false;
+  h+='<div class="legal"><h3>Nyilatkozatok</h3>'
+    +'<label class="check"><input type="checkbox" id="f_aszf" '+(consent.aszf?'checked':'')+'><span><span class="req" style="color:var(--err)">*</span> '
+    +'Elolvastam és elfogadom az <a href="'+LEGAL.aszf+'" target="_blank" rel="noopener">Általános szerződési feltételeket</a>, '
+    +'és tudomásul veszem az <a href="'+LEGAL.adat+'" target="_blank" rel="noopener">Adatkezelési tájékoztatót</a>.</span></label>';
+  if(early.length){
+    h+='<label class="check need"><input type="checkbox" id="f_early" '+(consent.early?'checked':'')+'><span><span class="req" style="color:var(--err)">*</span> '
+      +'Kifejezetten kérem, hogy a munkát a '+WITHDRAW_DAYS+' napos elállási határidőn belül kezdjétek meg '
+      +'(a bejelölt napok közül ide esik: '+early.map(d=>d.slice(5).replace('-','. ')+'.').join(', ')+'). '
+      +'Tudomásul veszem, hogy a munka teljes elvégzése után elállási jogomat elveszítem, '
+      +'a megkezdése után történő elállásnál pedig a már elvégzett rész arányos díját kell megfizetnem '
+      +'(<a href="'+LEGAL.aszf+'#p10" target="_blank" rel="noopener">ÁSZF 10. pont</a>).</span></label>'
+      +'<div class="selnote">Ha ezt nem kéred, menj vissza a naptárhoz, és csak '+WITHDRAW_DAYS+' napnál későbbi napokat jelölj be.</div>';
+  }
+  h+='</div>';
+  h+='<div class="nav"><button class="btn btn-ghost" id="back">← Vissza a naptárhoz</button><button class="btn btn-primary" id="submit">Foglalás elküldése</button></div>';
   viewEl.innerHTML=h;
   const bind=(id,k)=>document.getElementById(id).oninput=e=>customer[k]=e.target.value;
   bind('f_name','name');bind('f_phone','phone');bind('f_email','email');bind('f_zip','zip');bind('f_address','address');bind('f_note','note');
   document.querySelectorAll('input[name=tp]').forEach(r=>r.onchange=e=>customer.timepref=e.target.value);
   document.getElementById('f_photo').onchange=e=>{addPhotoFiles(e.target.files);e.target.value='';};
   document.getElementById('f_nophoto').onchange=e=>{noPhoto=e.target.checked;if(noPhoto)photos=[];renderPhotoList();updateNoPhotoNote();};
+  document.getElementById('f_aszf').onchange=e=>consent.aszf=e.target.checked;
+  const fe=document.getElementById('f_early');if(fe)fe.onchange=e=>consent.early=e.target.checked;
   document.getElementById('back').onclick=()=>{view='calendar';render();};
   document.getElementById('submit').onclick=submit;
   renderPhotoList();updateNoPhotoNote();
 }
 function updateNoPhotoNote(){
   const el=document.getElementById('nophotoNote');if(!el)return;
-  el.innerHTML=noPhoto?'<div class="nophoto-note">📞 Mivel nincs fotó, felvesszük veled telefonon a kapcsolatot, hogy pontosítsuk a folt jellegét.</div>':'';
+  el.innerHTML=noPhoto?'<div class="nophoto-note">Mivel nincs fotó, felvesszük veled telefonon a kapcsolatot, hogy pontosítsuk a folt jellegét.</div>':'';
 }
 function renderPhotoList(){
   const el=document.getElementById('photoList');if(!el)return;
@@ -536,15 +645,15 @@ function cloudCall(action,payload,key){
 function cloudSendBooking(b){
   const el=()=>document.getElementById('cloudState');
   if(!cloudOn()){const e0=el();if(e0)e0.remove();return;}
-  const e1=el();if(e1)e1.innerHTML='<span style="color:#5b6d72">⏳ Foglalás elküldése…</span>';
+  const e1=el();if(e1)e1.innerHTML='<span style="color:var(--muted)">Foglalás elküldése…</span>';
   cloudCall('booking',{data:b}).then(r=>{
     const e2=el();
-    if(e2)e2.innerHTML='<span style="color:#1c7c54;font-weight:700">✓ A foglalásod megérkezett hozzánk'
+    if(e2)e2.innerHTML='<span style="color:var(--ok);font-weight:700">✓ A foglalásod megérkezett hozzánk'
       +(r.photos?' ('+r.photos+' fotóval)':'')+' – nem kell mást tenned.</span>';
   }).catch(err=>{
     const e2=el();
-    if(e2)e2.innerHTML='<span style="color:#c0392b">⚠ A foglalást most nem sikerült elküldeni. '
-      +'Kérlek nyomd meg lent a „✉ Küldés e-mailben" gombot, hogy biztosan megkapjuk.</span>';
+    if(e2)e2.innerHTML='<span style="color:var(--err)">A foglalást most nem sikerült elküldeni. '
+      +'Kérlek nyomd meg lent a „Küldés e-mailben" gombot, hogy biztosan megkapjuk.</span>';
   });
 }
 
@@ -553,9 +662,16 @@ function submit(){
   if(!cart.length){alert('A kosár üres.');return;}
   if(!dates.size){alert('Jelölj be legalább egy napot, amikor otthon vagy.');view='calendar';render();return;}
   if(!photos.length&&!noPhoto){alert('Tölts fel legalább egy fotót a foltról, vagy pipáld be, hogy jelenleg nem tudsz képet készíteni.');return;}
+  if(!consent.aszf){alert('A foglaláshoz el kell fogadnod az Általános szerződési feltételeket és tudomásul venned az Adatkezelési tájékoztatót.');return;}
+  const early=earlyDates();
+  if(early.length&&!consent.early){alert('A bejelölt napok között van '+WITHDRAW_DAYS+' napon belüli is. Ehhez pipáld be a korai kezdés kérését, vagy válassz későbbi napokat a naptárban.');return;}
   const o=computeOrder();
-  const booking={created:Date.now(),customer:clone(customer),dates:[...dates].sort(),
-    property:clone(property),photos:photos.slice(),noPhoto:noPhoto,
+  const now=Date.now();
+  // jogi nyilatkozat: mikor, melyik ÁSZF-változatra, kért-e 14 napon belüli kezdést
+  const legal={aszf:true,aszfVer:ASZF_VER,acceptedAt:new Date(now).toISOString(),
+    earlyStart:early.length>0,earlyDates:early};
+  const booking={created:now,src:SRC,customer:clone(customer),dates:[...dates].sort(),
+    property:clone(property),photos:photos.slice(),noPhoto:noPhoto,legal:legal,
     items:cart.map(it=>Object.assign({label:itemLabel(it),total:itemTotal(it)},itemBreakdown(it)||{})),
     sub:o.sub,travelFee:o.travelFee,total:o.applied,deposit:o.deposit,onsite:o.onsite};
   let arr=[];try{arr=JSON.parse(localStorage.getItem(BKEY)||'[]');}catch(e){}
@@ -589,23 +705,26 @@ function renderDone(){
 'Tételek:\n'+lines+'\n\n'+
 'Részösszeg: '+fmt(b.sub)+'\n'+
 ((+b.travelFee>0)?('Kiszállási díj: '+fmt(b.travelFee)+'\n'):'')+
-'Végösszeg: '+fmt(b.total)+'\n'+
-'Foglalási előleg: '+fmt(b.deposit)+'\n'+
-'Helyszínen fizetendő: '+fmt(b.onsite)+'\n\n'+
-'Elérhető napok: '+b.dates.join(', ');
+'Becsült végösszeg: '+fmt(b.total)+'\n'+
+((+b.deposit>0)?('Foglalási előleg (a végösszegből levonva): '+fmt(b.deposit)+'\n'+
+'Helyszínen fizetendő: '+fmt(b.onsite)+'\n'):'')+'\n'+
+'Elérhető napok: '+b.dates.join(', ')+
+((b.legal&&b.legal.earlyStart)?('\n14 napon belüli kezdést kifejezetten kérte ('+b.legal.earlyDates.join(', ')+')'):'')+
+((b.legal&&b.legal.aszf)?('\nÁSZF ('+b.legal.aszfVer+') és adatkezelési tájékoztató elfogadva'):'');
   const mail='mailto:'+(cfg.settings.notifyEmail||'')+'?subject='+encodeURIComponent('Új foglalás – '+b.customer.name)+'&body='+encodeURIComponent(body);
-  viewEl.innerHTML='<div class="ok"><h2 style="margin:0 0 6px">✅ Köszönjük, '+esc(b.customer.name)+'!</h2>'
+  viewEl.innerHTML='<div class="ok"><h2 style="margin:0 0 6px">Köszönjük, '+esc(b.customer.name)+'!</h2>'
     +'Rögzítettük az igényed. <strong>24 órán belül</strong> jelentkezünk a megadott elérhetőségen, és egyeztetjük a pontos időpontot.</div>'
     +'<div id="cloudState" style="margin:10px 0 2px"></div>'
-    +'<p><strong>Becsült végösszeg: </strong><span style="color:var(--brand);font-weight:800;font-size:1.2rem">'+fmt(b.total)+'</span> (előleg: '+fmt(b.deposit)+')</p>'
+    +'<p><strong>Becsült végösszeg: </strong><span style="color:var(--brand);font-weight:700;font-size:1.2rem">'+fmt(b.total)+'</span>'
+    +((+b.deposit>0)?('<br><span class="selnote">Ebből '+fmt(b.deposit)+' foglalási előleg – az utalás módját a visszaigazolásban küldjük, és a végösszegből levonjuk; a különbözetet ('+fmt(b.onsite)+') a munka után, a helyszínen kell fizetni.</span>'):'')+'</p>'
     +'<pre class="sum">'+body.replace(/</g,'&lt;')+'</pre>'
     +((b.photos&&b.photos.length)?'<div class="photos">'+b.photos.map(s=>'<div class="thumb"><img src="'+s+'"></div>').join('')+'</div>':'')
-    +(b.noPhoto?'<div class="nophoto-note">📞 Nincs fotó – telefonon vesszük fel a kapcsolatot a folt pontosításához.</div>':'')
-    +'<div class="nav"><a class="btn btn-primary" href="'+mail+'">✉ Küldés e-mailben</a>'
-    +'<button class="btn btn-ghost" id="copyBtn">⧉ Másolás vágólapra</button></div>'
-    +'<div class="nav" style="margin-top:8px"><button class="btn btn-ghost" id="newBtn">＋ Új foglalás indítása</button></div>';
+    +(b.noPhoto?'<div class="nophoto-note">Nincs fotó – telefonon vesszük fel a kapcsolatot a folt pontosításához.</div>':'')
+    +'<div class="nav"><a class="btn btn-primary" href="'+mail+'">Küldés e-mailben</a>'
+    +'<button class="btn btn-ghost" id="copyBtn">Másolás vágólapra</button></div>'
+    +'<div class="nav" style="margin-top:8px"><button class="btn btn-ghost" id="newBtn">+ Új foglalás indítása</button></div>';
   document.getElementById('copyBtn').onclick=()=>{navigator.clipboard.writeText(body).then(()=>alert('Vágólapra másolva!'),()=>alert('Nem sikerült a másolás.'));};
-  document.getElementById('newBtn').onclick=()=>{cart=[];draft=null;dates=new Set();buildStep=1;view='property';property={type:null,floor:'',lift:null};photos=[];noPhoto=false;customer={name:'',phone:'',email:'',zip:'',address:'',note:'',timepref:'Rugalmas'};render();};
+  document.getElementById('newBtn').onclick=()=>{cart=[];draft=null;dates=new Set();buildStep=1;view='property';property={type:null,floor:'',lift:null};photos=[];noPhoto=false;consent={aszf:false,early:false};customer={name:'',phone:'',email:'',zip:'',address:'',note:'',timepref:'Rugalmas'};render();};
 }
 
 render();
